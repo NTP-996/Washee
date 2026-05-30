@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>washee — Your car, washed where it stands</title>
+  <meta name="description" content="washee is on-demand car washing. Book in seconds, a vetted pro comes to you, track them live, and pay cashless. Uber for car washes." />
+  <meta name="theme-color" content="#06080B" />
+
+  <!-- Brand mark as favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/washee-mark.svg" />
+
+  <!-- Be Vietnam Pro (Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Three.js (CDN, no build step). Used progressively — the page works without it. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Pointer-following glow (desktop, fine-pointer only; toggled on in JS) -->
+  <div class="cursor-glow" aria-hidden="true"></div>
+
+  <!-- ============================ NAV ============================ -->
+  <header class="nav" id="nav">
+    <div class="container nav__inner">
+      <a class="nav__brand" href="#top" aria-label="washee home">
+        <img class="nav__mark" src="assets/washee-mark.svg" alt="" width="34" height="34" />
+        <span class="nav__wordmark">washee</span>
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#how">How it works</a>
+        <a href="#tracking">Live tracking</a>
+        <a href="#tiers">Wash tiers</a>
+        <a href="#washers">For washers</a>
+      </nav>
+
+      <div class="nav__actions">
+        <a class="btn btn--ghost nav__signin" href="#">Sign in</a>
+        <a class="btn btn--primary btn--sm magnetic" href="#tiers">Book a wash</a>
+        <button class="nav__burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+          <span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile menu sheet -->
+  <div class="mobile-menu" id="mobileMenu" hidden>
+    <a href="#how">How it works</a>
+    <a href="#tracking">Live tracking</a>
+    <a href="#tiers">Wash tiers</a>
+    <a href="#washers">For washers</a>
+    <a class="btn btn--primary" href="#tiers">Book a wash</a>
+  </div>
+
+  <main id="top">
+    <!-- ============================ HERO ============================ -->
+    <section class="hero" id="hero">
+      <div class="hero__aura" aria-hidden="true"></div>
+      <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
+
+      <div class="container hero__inner">
+        <span class="eyebrow reveal"><i class="dot"></i> On-demand car wash</span>
+
+        <h1 class="hero__title">
+          <span class="reveal-line">Your car,</span>
+          <span class="reveal-line"><em class="grad-text">washed</em> where it stands.</span>
+        </h1>
+
+        <p class="hero__subhead reveal">
+          Book in 30 seconds. A vetted pro comes to you — driveway, office lot, or curbside.
+          Track every minute, pay cashless, drive off shining.
+        </p>
+
+        <div class="hero__cta reveal">
+          <a class="btn btn--primary btn--lg magnetic" href="#tiers">Book a wash</a>
+          <a class="btn btn--secondary btn--lg" href="#how">See how it works</a>
+        </div>
+
+        <div class="hero__ticker reveal" role="status">
+          <i class="pulse"></i> Live now: <strong>312 washers</strong> active near you
+        </div>
+      </div>
+
+      <a class="hero__scroll" href="#how" aria-label="Scroll to how it works">
+        <span>Scroll</span><i></i>
+      </a>
+    </section>
+
+    <!-- ============================ TRUST MARQUEE ============================ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>1.2M+ washes</span><i>✦</i><span>38 cities</span><i>✦</i><span>4.9★ average</span><i>✦</i>
+        <span>12k vetted washers</span><i>✦</i><span>Cashless</span><i>✦</i><span>Live GPS tracking</span><i>✦</i>
+        <span>1.2M+ washes</span><i>✦</i><span>38 cities</span><i>✦</i><span>4.9★ average</span><i>✦</i>
+        <span>12k vetted washers</span><i>✦</i><span>Cashless</span><i>✦</i><span>Live GPS tracking</span><i>✦</i>
+      </div>
+    </div>
+
+    <!-- ============================ HOW IT WORKS ============================ -->
+    <section class="section how" id="how">
+      <div class="container">
+        <header class="section__head">
+          <span class="eyebrow reveal"><i class="dot"></i> How it works</span>
+          <h2 class="section__title reveal">Three taps to a spotless car.</h2>
+          <p class="section__lead reveal">No bucket, no hose, no standing around. washee routes a pro to wherever your car is parked.</p>
+        </header>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step__num">01</span>
+            <h3 class="step__title">Drop your pin</h3>
+            <p class="step__body">Set where the car is and pick your vehicle. We match the nearest available washer in minutes.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step__num">02</span>
+            <h3 class="step__title">A pro rolls up</h3>
+            <p class="step__body">Your washer arrives with their own water and power. Watch them approach, live, on the map.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step__num">03</span>
+            <h3 class="step__title">Drive off shining</h3>
+            <p class="step__body">Foam, rinse, shine — done. Payment happens automatically. Rate and rebook in one tap.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================ LIVE TRACKING ============================ -->
+    <section class="section tracking" id="tracking">
+      <div class="container tracking__grid">
+        <div class="tracking__copy">
+          <span class="eyebrow reveal"><i class="dot"></i> Real-time</span>
+          <h2 class="section__title reveal">See your washer arrive, to the minute.</h2>
+          <p class="section__lead reveal">From booked to brilliant — every step lives on your map. No guessing, no waiting windows, no phone tag.</p>
+          <ul class="tracking__list reveal">
+            <li><i></i> Live GPS location &amp; ETA</li>
+            <li><i></i> Status updates at every stage</li>
+            <li><i></i> Message your washer in-app</li>
+          </ul>
+          <a class="btn btn--primary magnetic reveal" href="#app">Get the app</a>
+        </div>
+
+        <!-- Faux live-tracking panel (abstract map, not real tiles) -->
+        <div class="tracking__panel reveal" id="trackPanel" aria-label="Live tracking preview">
+          <div class="map" aria-hidden="true">
+            <div class="map__grid"></div>
+            <svg class="map__svg" viewBox="0 0 420 320" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#9FE5F9" />
+                  <stop offset="1" stop-color="#3C9FF6" />
+                </linearGradient>
+              </defs>
+              <path id="routePath" class="map__route"
+                d="M48,272 C120,250 120,150 200,150 C280,150 300,90 372,64"
+                fill="none" stroke="url(#routeGrad)" stroke-width="4" stroke-linecap="round" />
+              <circle id="homePin" class="map__home" cx="372" cy="64" r="7" />
+              <g id="washerDot" class="map__washer">
+                <circle r="9" />
+                <circle r="9" class="map__washer-ping" />
+              </g>
+            </svg>
+          </div>
+
+          <div class="track-card">
+            <div class="track-card__row">
+              <div class="track-card__avatar">M</div>
+              <div>
+                <strong>Minh T.</strong>
+                <span class="track-card__meta">4.9★ · 1,204 washes</span>
+              </div>
+              <div class="track-card__eta">
+                <em id="etaValue">7</em><span>min away</span>
+              </div>
+            </div>
+            <div class="track-card__feed" id="trackFeed">
+              <p>Washer assigned</p>
+              <p>On the way to you</p>
+              <p>Starting exterior wash</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ WASH TIERS ============================ -->
+    <section class="section tiers" id="tiers">
+      <div class="container">
+        <header class="section__head">
+          <span class="eyebrow reveal"><i class="dot"></i> Wash tiers</span>
+          <h2 class="section__title reveal">Pick your shine.</h2>
+          <p class="section__lead reveal">Transparent pricing, no surprises. Switch to monthly and wash as often as you like.</p>
+
+          <div class="toggle reveal" role="group" aria-label="Billing period">
+            <button class="toggle__opt is-active" data-plan="once" aria-pressed="true">One-time</button>
+            <button class="toggle__opt" data-plan="month" aria-pressed="false">Monthly unlimited</button>
+            <span class="toggle__pill" aria-hidden="true"></span>
+          </div>
+        </header>
+
+        <!-- NOTE: pricing & figures are illustrative placeholders, not committed pricing. -->
+        <div class="tier-grid">
+          <article class="tier reveal">
+            <h3 class="tier__name">Express</h3>
+            <p class="tier__desc">Exterior rinse, foam &amp; dry. In and out.</p>
+            <p class="tier__price"><span class="grad-text" data-once="$19" data-month="$39">$19</span><small data-once="per wash" data-month="/mo">per wash</small></p>
+            <ul class="tier__feat">
+              <li>Exterior hand wash</li>
+              <li>Spot-free rinse &amp; dry</li>
+              <li>Tire shine</li>
+              <li>~20 minutes</li>
+            </ul>
+            <a class="btn btn--secondary tier__cta" href="#">Select Express</a>
+          </article>
+
+          <article class="tier tier--featured reveal">
+            <span class="tier__badge">Most booked</span>
+            <h3 class="tier__name">Signature</h3>
+            <p class="tier__desc">Inside and out. The everyday favorite.</p>
+            <p class="tier__price"><span class="grad-text" data-once="$34" data-month="$59">$34</span><small data-once="per wash" data-month="/mo">per wash</small></p>
+            <ul class="tier__feat">
+              <li>Everything in Express</li>
+              <li>Interior vacuum &amp; wipe-down</li>
+              <li>Glass, dash &amp; console</li>
+              <li>~40 minutes</li>
+            </ul>
+            <a class="btn btn--primary tier__cta magnetic" href="#">Select Signature</a>
+          </article>
+
+          <article class="tier reveal">
+            <h3 class="tier__name">Showroom</h3>
+            <p class="tier__desc">Full detail with ceramic-grade shine.</p>
+            <p class="tier__price"><span class="grad-text" data-once="$69" data-month="$99">$69</span><small data-once="per wash" data-month="/mo">per wash</small></p>
+            <ul class="tier__feat">
+              <li>Everything in Signature</li>
+              <li>Clay bar &amp; wax</li>
+              <li>Ceramic spray protect</li>
+              <li>~75 minutes</li>
+            </ul>
+            <a class="btn btn--secondary tier__cta" href="#">Select Showroom</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ STATS ============================ -->
+    <section class="section stats">
+      <div class="container stats__grid">
+        <div class="stat reveal"><span class="stat__value grad-text" data-count="1.2" data-suffix="M+">0</span><span class="stat__label">Washes done</span></div>
+        <div class="stat reveal"><span class="stat__value grad-text" data-count="4.9" data-suffix="★">0</span><span class="stat__label">Average rating</span></div>
+        <div class="stat reveal"><span class="stat__value grad-text" data-count="38" data-suffix="">0</span><span class="stat__label">Cities live</span></div>
+        <div class="stat reveal"><span class="stat__value grad-text" data-count="12" data-suffix="k">0</span><span class="stat__label">Vetted washers</span></div>
+      </div>
+    </section>
+
+    <!-- ============================ APP DOWNLOAD ============================ -->
+    <section class="section app" id="app">
+      <div class="container app__grid">
+        <div class="app__phone reveal" aria-hidden="true">
+          <div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="phone__map"></div>
+              <div class="phone__card">
+                <div class="phone__eta"><em>6</em> min away</div>
+                <p>Minh is on the way</p>
+                <span class="phone__bar"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="app__copy">
+          <span class="eyebrow reveal"><i class="dot"></i> The app</span>
+          <h2 class="section__title reveal">The whole wash, in your pocket.</h2>
+          <p class="section__lead reveal">Book, track, pay, and rebook in a few taps. Save your cars and your favorite washers.</p>
+
+          <div class="app__badges reveal">
+            <a class="store-badge" href="#" aria-label="Download on the App Store">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.9c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.5 2 2.5 2 1 0 1.4-.6 2.6-.6 1.2 0 1.5.6 2.6.6 1.1 0 1.8-1 2.4-2 .8-1.1 1.1-2.2 1.1-2.3-.1 0-2.1-.8-2.1-3.1zM14.5 6.8c.5-.7.9-1.6.8-2.6-.8 0-1.8.5-2.4 1.2-.5.6-1 1.6-.8 2.5.9.1 1.8-.4 2.4-1.1z"/></svg>
+              <span><small>Download on the</small>App Store</span>
+            </a>
+            <a class="store-badge" href="#" aria-label="Get it on Google Play">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3.2v17.6c0 .4.4.6.7.4l9.5-9.2-9.5-9.2c-.3-.2-.7 0-.7.4zM15.6 12.8l2.9 2.8 2.9-1.7c.5-.3.5-1 0-1.3l-2.9-1.7-2.9 2.8.1-.1zM5.6 21.6l8.4-8.1 2.4 2.3-8.9 5.2c-.6.4-1.3.4-1.9.6zM5.6 2.4c.6.2 1.3.2 1.9.6l8.9 5.2-2.4 2.3-8.4-8.1z"/></svg>
+              <span><small>Get it on</small>Google Play</span>
+            </a>
+          </div>
+
+          <form class="app__sms reveal" onsubmit="return false">
+            <input type="tel" inputmode="tel" placeholder="Your phone number" aria-label="Phone number for app link" />
+            <button class="btn btn--primary" type="submit">Text me the link</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ BECOME A WASHER ============================ -->
+    <section class="section washers" id="washers">
+      <div class="container washers__inner reveal">
+        <div>
+          <span class="eyebrow"><i class="dot"></i> For washers</span>
+          <h2 class="section__title">Got a sponge and a hustle?</h2>
+          <p class="section__lead">Wash on your schedule, earn on your terms. Jobs route straight to you, payouts hit instantly.</p>
+        </div>
+        <div class="washers__aside">
+          <p class="washers__stat"><span class="grad-text">$1,400</span><small>top washers / week</small></p>
+          <a class="btn btn--primary btn--lg magnetic" href="#">Apply to wash</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ FINAL CTA ============================ -->
+    <section class="section final">
+      <div class="final__aura" aria-hidden="true"></div>
+      <div class="container final__inner">
+        <h2 class="final__title reveal">Spotless is one tap away.</h2>
+        <a class="btn btn--primary btn--lg magnetic reveal" href="#tiers">Book a wash</a>
+        <div class="final__badges reveal">
+          <a class="store-badge store-badge--min" href="#">App Store</a>
+          <a class="store-badge store-badge--min" href="#">Google Play</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="footer">
+    <div class="footer__watermark" aria-hidden="true">
+      <img src="assets/washee-mark.svg" alt="" />
+    </div>
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a class="nav__brand" href="#top">
+          <img class="nav__mark" src="assets/washee-mark.svg" alt="" width="30" height="30" />
+          <span class="nav__wordmark">washee</span>
+        </a>
+        <p>Your car, washed where it stands.</p>
+      </div>
+      <nav class="footer__col" aria-label="Product">
+        <h4>Product</h4>
+        <a href="#how">How it works</a>
+        <a href="#tiers">Wash tiers</a>
+        <a href="#tracking">Live tracking</a>
+        <a href="#app">Get the app</a>
+      </nav>
+      <nav class="footer__col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#washers">Become a washer</a>
+        <a href="#">Careers</a>
+        <a href="#">Support</a>
+      </nav>
+      <nav class="footer__col" aria-label="Legal">
+        <h4>Legal</h4>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Cookies</a>
+      </nav>
+    </div>
+    <div class="container footer__legal">
+      <span>© 2026 washee, Inc. All rights reserved.</span>
+      <div class="footer__social">
+        <a href="#" aria-label="Instagram">◎</a>
+        <a href="#" aria-label="X">✕</a>
+        <a href="#" aria-label="TikTok">♪</a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

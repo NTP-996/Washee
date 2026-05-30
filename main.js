@@ -1,0 +1,436 @@
+/* ==========================================================================
+   washee — landing page interactions
+   Vanilla JS + a progressively-enhanced Three.js hero (CDN, no build step).
+   Everything degrades gracefully: no WebGL / reduced-motion → CSS aura only,
+   content always works.
+   ========================================================================== */
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+/* ----------------------------------------------------------------------- */
+/* Nav: glassify on scroll                                                  */
+/* ----------------------------------------------------------------------- */
+const nav = document.getElementById('nav');
+const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 40);
+onScroll();
+window.addEventListener('scroll', onScroll, { passive: true });
+
+/* ----------------------------------------------------------------------- */
+/* Mobile menu                                                              */
+/* ----------------------------------------------------------------------- */
+const burger = document.getElementById('navBurger');
+const mobileMenu = document.getElementById('mobileMenu');
+burger.addEventListener('click', () => {
+  const open = burger.getAttribute('aria-expanded') === 'true';
+  burger.setAttribute('aria-expanded', String(!open));
+  mobileMenu.hidden = open;
+});
+mobileMenu.querySelectorAll('a').forEach((link) =>
+  link.addEventListener('click', () => {
+    burger.setAttribute('aria-expanded', 'false');
+    mobileMenu.hidden = true;
+  })
+);
+
+/* ----------------------------------------------------------------------- */
+/* Scroll reveals                                                           */
+/* ----------------------------------------------------------------------- */
+const revealTargets = document.querySelectorAll('.reveal, .hero__title');
+if (reduceMotion || !('IntersectionObserver' in window)) {
+  revealTargets.forEach((el) => el.classList.add('is-visible'));
+} else {
+  const revealIO = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+  );
+  revealTargets.forEach((el) => revealIO.observe(el));
+}
+
+/* ----------------------------------------------------------------------- */
+/* Count-up stats                                                           */
+/* ----------------------------------------------------------------------- */
+const countEls = document.querySelectorAll('[data-count]');
+
+/** Animate a number element from 0 to its data-count, preserving decimals. */
+function countUp(el) {
+  const target = parseFloat(el.dataset.count);
+  const suffix = el.dataset.suffix || '';
+  const decimals = (el.dataset.count.split('.')[1] || '').length;
+  const duration = 1400;
+  const start = performance.now();
+
+  const tick = (now) => {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    el.textContent = (target * eased).toFixed(decimals) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+if (reduceMotion || !('IntersectionObserver' in window)) {
+  countEls.forEach((el) => {
+    el.textContent = parseFloat(el.dataset.count).toFixed((el.dataset.count.split('.')[1] || '').length) + (el.dataset.suffix || '');
+  });
+} else {
+  const countIO = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          countUp(entry.target);
+          obs.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.6 }
+  );
+  countEls.forEach((el) => countIO.observe(el));
+}
+
+/* ----------------------------------------------------------------------- */
+/* Pricing toggle (one-time / monthly)                                      */
+/* ----------------------------------------------------------------------- */
+const toggle = document.querySelector('.toggle');
+if (toggle) {
+  const opts = toggle.querySelectorAll('.toggle__opt');
+  const swapEls = document.querySelectorAll('[data-once][data-month]');
+
+  const setPlan = (plan) => {
+    toggle.dataset.plan = plan;
+    opts.forEach((opt) => {
+      const active = opt.dataset.plan === plan;
+      opt.classList.toggle('is-active', active);
+      opt.setAttribute('aria-pressed', String(active));
+    });
+    swapEls.forEach((el) => { el.textContent = el.dataset[plan]; });
+  };
+
+  opts.forEach((opt) => opt.addEventListener('click', () => setPlan(opt.dataset.plan)));
+  setPlan('once');
+}
+
+/* ----------------------------------------------------------------------- */
+/* Live tracking panel: route travel + ETA countdown + status feed          */
+/* ----------------------------------------------------------------------- */
+function initTracking() {
+  const panel = document.getElementById('trackPanel');
+  if (!panel) return;
+  const path = document.getElementById('routePath');
+  const dot = document.getElementById('washerDot');
+  const etaEl = document.getElementById('etaValue');
+  const feed = document.querySelectorAll('#trackFeed p');
+  if (!path || !dot) return;
+
+  path.setAttribute('pathLength', '1'); // enables the CSS draw animation
+  const len = path.getTotalLength();
+
+  const placeDot = (t) => {
+    const pt = path.getPointAtLength(t * len);
+    dot.setAttribute('transform', `translate(${pt.x} ${pt.y})`);
+  };
+
+  // Reduced motion / no-JS-animation: composed static state.
+  if (reduceMotion) {
+    placeDot(0.62);
+    if (etaEl) etaEl.textContent = '4';
+    feed.forEach((p) => p.classList.add('is-done'));
+    return;
+  }
+
+  let raf = null;
+  let startTs = null;
+  const loopMs = 9000;
+  let running = false;
+
+  const frame = (ts) => {
+    if (startTs === null) startTs = ts;
+    const t = ((ts - startTs) % loopMs) / loopMs;
+    placeDot(t);
+
+    // ETA counts 7 → 1 across the loop
+    if (etaEl) etaEl.textContent = String(Math.max(1, 7 - Math.floor(t * 7)));
+
+    // Status feed fills as the washer progresses
+    feed.forEach((p, i) => p.classList.toggle('is-done', t > (i + 1) / (feed.length + 1)));
+
+    raf = requestAnimationFrame(frame);
+  };
+
+  // Run only while the panel is on screen (saves battery).
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !running) {
+          running = true;
+          startTs = null;
+          raf = requestAnimationFrame(frame);
+        } else if (!entry.isIntersecting && running) {
+          running = false;
+          if (raf) cancelAnimationFrame(raf);
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+  io.observe(panel);
+}
+initTracking();
+
+/* ----------------------------------------------------------------------- */
+/* Magnetic buttons (desktop, fine pointer)                                 */
+/* ----------------------------------------------------------------------- */
+if (finePointer && !reduceMotion) {
+  document.querySelectorAll('.magnetic').forEach((el) => {
+    el.addEventListener('mousemove', (e) => {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left - r.width / 2;
+      const y = e.clientY - r.top - r.height / 2;
+      el.style.transform = `translate(${x * 0.25}px, ${y * 0.35}px)`;
+    });
+    el.addEventListener('mouseleave', () => { el.style.transform = ''; });
+  });
+}
+
+/* ----------------------------------------------------------------------- */
+/* Cursor glow (desktop, fine pointer)                                      */
+/* ----------------------------------------------------------------------- */
+if (finePointer && !reduceMotion) {
+  const glow = document.querySelector('.cursor-glow');
+  let gx = 0, gy = 0, cx = 0, cy = 0, glowRaf = null;
+  glow.classList.add('is-on');
+
+  window.addEventListener('mousemove', (e) => {
+    gx = e.clientX; gy = e.clientY;
+    if (!glowRaf) glowRaf = requestAnimationFrame(moveGlow);
+  });
+
+  function moveGlow() {
+    cx += (gx - cx) * 0.15;
+    cy += (gy - cy) * 0.15;
+    glow.style.transform = `translate(${cx}px, ${cy}px)`;
+    glowRaf = Math.abs(gx - cx) > 0.5 || Math.abs(gy - cy) > 0.5 ? requestAnimationFrame(moveGlow) : null;
+  }
+}
+
+/* ======================================================================= */
+/* Three.js hero — liquid droplet blob + drifting droplets                  */
+/* Progressive: skipped entirely on reduced-motion or when WebGL/import     */
+/* fails. The CSS .hero__aura always provides a fallback backdrop.          */
+/* ======================================================================= */
+async function initHero() {
+  if (reduceMotion) return;
+
+  const canvas = document.getElementById('heroCanvas');
+  if (!canvas) return;
+
+  // Bail early if WebGL isn't available.
+  try {
+    const test = document.createElement('canvas');
+    if (!(test.getContext('webgl2') || test.getContext('webgl'))) return;
+  } catch (_) { return; }
+
+  let THREE;
+  try {
+    THREE = await import('three');
+  } catch (err) {
+    console.warn('[washee] Three.js unavailable, using CSS fallback.', err);
+    return;
+  }
+
+  const hero = document.getElementById('hero');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(dpr);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0, 5.2);
+
+  const COLOR_A = new THREE.Color('#9FE5F9'); // cyan rim
+  const COLOR_B = new THREE.Color('#3C9FF6'); // azure core
+  const COLOR_DEEP = new THREE.Color('#05080d');
+
+  // --- GLSL: classic 3D simplex noise (Ashima / Stefan Gustavson) ---------
+  const NOISE = `
+    vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
+    vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+    float snoise(vec3 v){
+      const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
+      vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+      vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g; vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+      vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+      i=mod(i,289.0);
+      vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+      float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+      vec4 j=p-49.0*floor(p*ns.z*ns.z);
+      vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
+      vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y);
+      vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+      vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
+      vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+      vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+      vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+      p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+      vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+      return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+    }`;
+
+  // --- Blob: icosahedron displaced by noise, fresnel-gradient surface -----
+  const blobMat = new THREE.ShaderMaterial({
+    transparent: true,
+    uniforms: {
+      uTime: { value: 0 },
+      uColorA: { value: COLOR_A },
+      uColorB: { value: COLOR_B },
+      uColorDeep: { value: COLOR_DEEP },
+      uAmp: { value: 0.32 },
+    },
+    vertexShader: `
+      ${NOISE}
+      uniform float uTime; uniform float uAmp;
+      varying vec3 vNormal; varying vec3 vView; varying float vN;
+      void main(){
+        float n = snoise(normal*1.3 + uTime*0.28);
+        vN = n;
+        vec3 displaced = position + normal * n * uAmp;
+        vec4 mv = modelViewMatrix * vec4(displaced,1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vView = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColorA; uniform vec3 uColorB; uniform vec3 uColorDeep; uniform float uTime;
+      varying vec3 vNormal; varying vec3 vView; varying float vN;
+      void main(){
+        float fres = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), 2.4);
+        vec3 grad = mix(uColorB, uColorA, fres);
+        // moving caustic streaks
+        float caustic = smoothstep(0.55, 0.95, 0.5 + 0.5*sin(vN*7.0 + uTime*1.2));
+        vec3 col = mix(uColorDeep, grad, clamp(fres*1.05 + caustic*0.25, 0.0, 1.0));
+        col += grad * pow(fres, 3.0) * 0.8;          // bright rim
+        float alpha = clamp(fres*1.25 + caustic*0.35 + 0.06, 0.0, 1.0);
+        gl_FragColor = vec4(col, alpha);
+      }`,
+  });
+
+  const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 18), blobMat);
+  scene.add(blob);
+
+  // --- Soft additive halo behind the blob (fakes bloom) -------------------
+  const haloTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grd.addColorStop(0, 'rgba(70,170,255,0.55)');
+    grd.addColorStop(0.5, 'rgba(60,159,246,0.18)');
+    grd.addColorStop(1, 'rgba(60,159,246,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+  halo.scale.set(6.5, 6.5, 1);
+  halo.position.z = -1;
+  scene.add(halo);
+
+  // --- Drifting droplets (additive points) --------------------------------
+  const COUNT = 220;
+  const positions = new Float32Array(COUNT * 3);
+  const speeds = new Float32Array(COUNT);
+  for (let i = 0; i < COUNT; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 7;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 7;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 3;
+    speeds[i] = 0.12 + Math.random() * 0.5;
+  }
+  const dropGeo = new THREE.BufferGeometry();
+  dropGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const dropTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, 'rgba(200,240,255,0.95)');
+    grd.addColorStop(0.4, 'rgba(95,192,255,0.5)');
+    grd.addColorStop(1, 'rgba(60,159,246,0)');
+    g.fillStyle = grd; g.beginPath(); g.arc(32, 32, 32, 0, Math.PI * 2); g.fill();
+    return new THREE.CanvasTexture(c);
+  })();
+  const drops = new THREE.Points(dropGeo, new THREE.PointsMaterial({
+    size: 0.13, map: dropTex, transparent: true, blending: THREE.AdditiveBlending,
+    depthWrite: false, sizeAttenuation: true, opacity: 0.9,
+  }));
+  scene.add(drops);
+
+  // --- Sizing -------------------------------------------------------------
+  const resize = () => {
+    const w = hero.clientWidth, h = hero.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  // --- Pointer parallax ---------------------------------------------------
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (finePointer) {
+    window.addEventListener('mousemove', (e) => {
+      mouse.tx = (e.clientX / window.innerWidth - 0.5);
+      mouse.ty = (e.clientY / window.innerHeight - 0.5);
+    });
+  }
+
+  // --- Run loop, paused when hero is off-screen or tab hidden -------------
+  const clock = new THREE.Clock();
+  let visible = true, hidden = false, raf = null;
+
+  const render = () => {
+    const t = clock.getElapsedTime();
+    blobMat.uniforms.uTime.value = t;
+
+    mouse.x += (mouse.tx - mouse.x) * 0.05;
+    mouse.y += (mouse.ty - mouse.y) * 0.05;
+    blob.rotation.y = t * 0.12 + mouse.x * 0.6;
+    blob.rotation.x = mouse.y * 0.5;
+    camera.position.x = mouse.x * 0.8;
+    camera.position.y = -mouse.y * 0.6;
+    camera.lookAt(0, 0, 0);
+
+    const pos = dropGeo.attributes.position.array;
+    for (let i = 0; i < COUNT; i++) {
+      pos[i * 3 + 1] += speeds[i] * 0.012;
+      if (pos[i * 3 + 1] > 3.6) pos[i * 3 + 1] = -3.6;
+    }
+    dropGeo.attributes.position.needsUpdate = true;
+
+    renderer.render(scene, camera);
+    raf = requestAnimationFrame(render);
+  };
+
+  const start = () => { if (!raf && visible && !hidden) { clock.start(); raf = requestAnimationFrame(render); } };
+  const stop = () => { if (raf) { cancelAnimationFrame(raf); raf = null; } };
+
+  new IntersectionObserver(
+    (entries) => { visible = entries[0].isIntersecting; visible ? start() : stop(); },
+    { threshold: 0.01 }
+  ).observe(hero);
+
+  document.addEventListener('visibilitychange', () => {
+    hidden = document.hidden;
+    hidden ? stop() : start();
+  });
+
+  start();
+}
+
+initHero();
