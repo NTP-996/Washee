@@ -2,11 +2,17 @@
    washee — landing page interactions
    Vanilla JS + a progressively-enhanced Three.js hero (CDN, no build step).
    Everything degrades gracefully: no WebGL / reduced-motion → CSS aura only,
-   content always works.
+   content always works. Mobile/low-power devices get a lighter 3D scene.
    ========================================================================== */
 
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduceMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+const reduceMotion = reduceMotionMQ.matches;
 const finePointer = window.matchMedia('(pointer: fine)').matches;
+
+// If the OS reduced-motion preference changes mid-session, reload so every
+// CSS + JS motion path re-initialises consistently (CSS stops instantly,
+// so we cannot leave JS loops running against the new preference).
+reduceMotionMQ.addEventListener?.('change', () => window.location.reload());
 
 /* ----------------------------------------------------------------------- */
 /* Nav: glassify on scroll                                                  */
@@ -17,21 +23,34 @@ onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
 
 /* ----------------------------------------------------------------------- */
-/* Mobile menu                                                              */
+/* Mobile menu (with focus management)                                      */
 /* ----------------------------------------------------------------------- */
 const burger = document.getElementById('navBurger');
 const mobileMenu = document.getElementById('mobileMenu');
+
+function openMenu() {
+  burger.setAttribute('aria-expanded', 'true');
+  mobileMenu.hidden = false;
+  mobileMenu.querySelector('a')?.focus();
+}
+function closeMenu(returnFocus = true) {
+  burger.setAttribute('aria-expanded', 'false');
+  mobileMenu.hidden = true;
+  if (returnFocus) burger.focus();
+}
 burger.addEventListener('click', () => {
-  const open = burger.getAttribute('aria-expanded') === 'true';
-  burger.setAttribute('aria-expanded', String(!open));
-  mobileMenu.hidden = open;
+  burger.getAttribute('aria-expanded') === 'true' ? closeMenu() : openMenu();
 });
 mobileMenu.querySelectorAll('a').forEach((link) =>
-  link.addEventListener('click', () => {
-    burger.setAttribute('aria-expanded', 'false');
-    mobileMenu.hidden = true;
-  })
+  link.addEventListener('click', () => closeMenu(false))
 );
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && burger.getAttribute('aria-expanded') === 'true') closeMenu();
+});
+// Reset the sheet if the viewport grows into the desktop nav.
+window.matchMedia('(min-width: 640px)').addEventListener?.('change', (e) => {
+  if (e.matches && !mobileMenu.hidden) closeMenu(false);
+});
 
 /* ----------------------------------------------------------------------- */
 /* Scroll reveals                                                           */
@@ -59,62 +78,37 @@ if (reduceMotion || !('IntersectionObserver' in window)) {
 /* ----------------------------------------------------------------------- */
 const countEls = document.querySelectorAll('[data-count]');
 
-/** Animate a number element from 0 to its data-count, preserving decimals. */
+/** Format an element's numeric value, preserving its source decimals + suffix. */
+function formatCount(el, value) {
+  const decimals = (el.dataset.count.split('.')[1] || '').length;
+  return value.toFixed(decimals) + (el.dataset.suffix || '');
+}
+
 function countUp(el) {
   const target = parseFloat(el.dataset.count);
-  const suffix = el.dataset.suffix || '';
-  const decimals = (el.dataset.count.split('.')[1] || '').length;
   const duration = 1400;
   const start = performance.now();
-
   const tick = (now) => {
     const p = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-    el.textContent = (target * eased).toFixed(decimals) + suffix;
+    el.textContent = formatCount(el, target * eased);
     if (p < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
 }
 
 if (reduceMotion || !('IntersectionObserver' in window)) {
-  countEls.forEach((el) => {
-    el.textContent = parseFloat(el.dataset.count).toFixed((el.dataset.count.split('.')[1] || '').length) + (el.dataset.suffix || '');
-  });
+  countEls.forEach((el) => { el.textContent = formatCount(el, parseFloat(el.dataset.count)); });
 } else {
   const countIO = new IntersectionObserver(
     (entries, obs) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          countUp(entry.target);
-          obs.unobserve(entry.target);
-        }
+        if (entry.isIntersecting) { countUp(entry.target); obs.unobserve(entry.target); }
       });
     },
     { threshold: 0.6 }
   );
   countEls.forEach((el) => countIO.observe(el));
-}
-
-/* ----------------------------------------------------------------------- */
-/* Pricing toggle (one-time / monthly)                                      */
-/* ----------------------------------------------------------------------- */
-const toggle = document.querySelector('.toggle');
-if (toggle) {
-  const opts = toggle.querySelectorAll('.toggle__opt');
-  const swapEls = document.querySelectorAll('[data-once][data-month]');
-
-  const setPlan = (plan) => {
-    toggle.dataset.plan = plan;
-    opts.forEach((opt) => {
-      const active = opt.dataset.plan === plan;
-      opt.classList.toggle('is-active', active);
-      opt.setAttribute('aria-pressed', String(active));
-    });
-    swapEls.forEach((el) => { el.textContent = el.dataset[plan]; });
-  };
-
-  opts.forEach((opt) => opt.addEventListener('click', () => setPlan(opt.dataset.plan)));
-  setPlan('once');
 }
 
 /* ----------------------------------------------------------------------- */
@@ -129,15 +123,13 @@ function initTracking() {
   const feed = document.querySelectorAll('#trackFeed p');
   if (!path || !dot) return;
 
-  path.setAttribute('pathLength', '1'); // enables the CSS draw animation
   const len = path.getTotalLength();
-
   const placeDot = (t) => {
     const pt = path.getPointAtLength(t * len);
     dot.setAttribute('transform', `translate(${pt.x} ${pt.y})`);
   };
 
-  // Reduced motion / no-JS-animation: composed static state.
+  // Reduced motion: composed static state, no loop.
   if (reduceMotion) {
     placeDot(0.62);
     if (etaEl) etaEl.textContent = '4';
@@ -145,57 +137,52 @@ function initTracking() {
     return;
   }
 
-  let raf = null;
-  let startTs = null;
+  let raf = null, startTs = null, running = false;
   const loopMs = 9000;
-  let running = false;
 
   const frame = (ts) => {
     if (startTs === null) startTs = ts;
     const t = ((ts - startTs) % loopMs) / loopMs;
     placeDot(t);
-
-    // ETA counts 7 → 1 across the loop
     if (etaEl) etaEl.textContent = String(Math.max(1, 7 - Math.floor(t * 7)));
-
-    // Status feed fills as the washer progresses
     feed.forEach((p, i) => p.classList.toggle('is-done', t > (i + 1) / (feed.length + 1)));
-
     raf = requestAnimationFrame(frame);
   };
 
   // Run only while the panel is on screen (saves battery).
-  const io = new IntersectionObserver(
+  new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting && !running) {
-          running = true;
-          startTs = null;
-          raf = requestAnimationFrame(frame);
+          running = true; startTs = null; raf = requestAnimationFrame(frame);
         } else if (!entry.isIntersecting && running) {
-          running = false;
-          if (raf) cancelAnimationFrame(raf);
+          running = false; if (raf) cancelAnimationFrame(raf);
         }
       });
     },
     { threshold: 0.2 }
-  );
-  io.observe(panel);
+  ).observe(panel);
 }
 initTracking();
 
 /* ----------------------------------------------------------------------- */
-/* Magnetic buttons (desktop, fine pointer)                                 */
+/* Magnetic buttons (desktop, fine pointer) — rect cached, rAF-coalesced    */
 /* ----------------------------------------------------------------------- */
 if (finePointer && !reduceMotion) {
   document.querySelectorAll('.magnetic').forEach((el) => {
+    let rect = null, raf = null, mx = 0, my = 0;
+    const apply = () => { el.style.transform = `translate(${mx * 0.25}px, ${my * 0.35}px)`; raf = null; };
+    el.addEventListener('mouseenter', () => { rect = el.getBoundingClientRect(); });
     el.addEventListener('mousemove', (e) => {
-      const r = el.getBoundingClientRect();
-      const x = e.clientX - r.left - r.width / 2;
-      const y = e.clientY - r.top - r.height / 2;
-      el.style.transform = `translate(${x * 0.25}px, ${y * 0.35}px)`;
+      if (!rect) rect = el.getBoundingClientRect();
+      mx = e.clientX - rect.left - rect.width / 2;
+      my = e.clientY - rect.top - rect.height / 2;
+      if (!raf) raf = requestAnimationFrame(apply);
     });
-    el.addEventListener('mouseleave', () => { el.style.transform = ''; });
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = ''; rect = null;
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+    });
   });
 }
 
@@ -211,7 +198,6 @@ if (finePointer && !reduceMotion) {
     gx = e.clientX; gy = e.clientY;
     if (!glowRaf) glowRaf = requestAnimationFrame(moveGlow);
   });
-
   function moveGlow() {
     cx += (gx - cx) * 0.15;
     cy += (gy - cy) * 0.15;
@@ -222,8 +208,8 @@ if (finePointer && !reduceMotion) {
 
 /* ======================================================================= */
 /* Three.js hero — liquid droplet blob + drifting droplets                  */
-/* Progressive: skipped entirely on reduced-motion or when WebGL/import     */
-/* fails. The CSS .hero__aura always provides a fallback backdrop.          */
+/* Progressive: skipped on reduced-motion or when WebGL/import fails.       */
+/* The CSS .hero__aura always provides a fallback backdrop.                 */
 /* ======================================================================= */
 async function initHero() {
   if (reduceMotion) return;
@@ -231,7 +217,6 @@ async function initHero() {
   const canvas = document.getElementById('heroCanvas');
   if (!canvas) return;
 
-  // Bail early if WebGL isn't available.
   try {
     const test = document.createElement('canvas');
     if (!(test.getContext('webgl2') || test.getContext('webgl'))) return;
@@ -246,9 +231,17 @@ async function initHero() {
   }
 
   const hero = document.getElementById('hero');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  // Capability-based downgrade (DESIGN.md: 3D simplifies on mobile/low-power).
+  const lowPower =
+    window.innerWidth < 720 ||
+    (navigator.deviceMemory && navigator.deviceMemory <= 4) ||
+    (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+  const DETAIL = lowPower ? 4 : 8;
+  const COUNT = lowPower ? 70 : 180;
+  const dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lowPower });
   renderer.setPixelRatio(dpr);
   renderer.setClearColor(0x000000, 0);
 
@@ -256,8 +249,8 @@ async function initHero() {
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
   camera.position.set(0, 0, 5.2);
 
-  const COLOR_A = new THREE.Color('#9FE5F9'); // cyan rim
-  const COLOR_B = new THREE.Color('#3C9FF6'); // azure core
+  const COLOR_A = new THREE.Color('#9FE5F9');
+  const COLOR_B = new THREE.Color('#3C9FF6');
   const COLOR_DEEP = new THREE.Color('#05080d');
 
   // --- GLSL: classic 3D simplex noise (Ashima / Stefan Gustavson) ---------
@@ -285,15 +278,11 @@ async function initHero() {
       return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
     }`;
 
-  // --- Blob: icosahedron displaced by noise, fresnel-gradient surface -----
   const blobMat = new THREE.ShaderMaterial({
     transparent: true,
     uniforms: {
-      uTime: { value: 0 },
-      uColorA: { value: COLOR_A },
-      uColorB: { value: COLOR_B },
-      uColorDeep: { value: COLOR_DEEP },
-      uAmp: { value: 0.32 },
+      uTime: { value: 0 }, uColorA: { value: COLOR_A }, uColorB: { value: COLOR_B },
+      uColorDeep: { value: COLOR_DEEP }, uAmp: { value: 0.32 },
     },
     vertexShader: `
       ${NOISE}
@@ -314,19 +303,18 @@ async function initHero() {
       void main(){
         float fres = pow(1.0 - max(dot(normalize(vNormal), normalize(vView)), 0.0), 2.4);
         vec3 grad = mix(uColorB, uColorA, fres);
-        // moving caustic streaks
         float caustic = smoothstep(0.55, 0.95, 0.5 + 0.5*sin(vN*7.0 + uTime*1.2));
         vec3 col = mix(uColorDeep, grad, clamp(fres*1.05 + caustic*0.25, 0.0, 1.0));
-        col += grad * pow(fres, 3.0) * 0.8;          // bright rim
+        col += grad * pow(fres, 3.0) * 0.8;
         float alpha = clamp(fres*1.25 + caustic*0.35 + 0.06, 0.0, 1.0);
         gl_FragColor = vec4(col, alpha);
       }`,
   });
 
-  const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 18), blobMat);
+  const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, DETAIL), blobMat);
   scene.add(blob);
 
-  // --- Soft additive halo behind the blob (fakes bloom) -------------------
+  // Soft additive halo behind the blob (fakes bloom, transparent-safe).
   const haloTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 128;
     const g = c.getContext('2d');
@@ -342,8 +330,7 @@ async function initHero() {
   halo.position.z = -1;
   scene.add(halo);
 
-  // --- Drifting droplets (additive points) --------------------------------
-  const COUNT = 220;
+  // Drifting droplets.
   const positions = new Float32Array(COUNT * 3);
   const speeds = new Float32Array(COUNT);
   for (let i = 0; i < COUNT; i++) {
@@ -371,7 +358,6 @@ async function initHero() {
   }));
   scene.add(drops);
 
-  // --- Sizing -------------------------------------------------------------
   const resize = () => {
     const w = hero.clientWidth, h = hero.clientHeight;
     renderer.setSize(w, h, false);
@@ -381,7 +367,6 @@ async function initHero() {
   resize();
   window.addEventListener('resize', resize);
 
-  // --- Pointer parallax ---------------------------------------------------
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   if (finePointer) {
     window.addEventListener('mousemove', (e) => {
@@ -390,7 +375,6 @@ async function initHero() {
     });
   }
 
-  // --- Run loop, paused when hero is off-screen or tab hidden -------------
   const clock = new THREE.Clock();
   let visible = true, hidden = false, raf = null;
 
