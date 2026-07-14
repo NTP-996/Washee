@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>washee — book a wash</title>
+<meta name="description" content="On-demand car wash. A vetted pro comes to your car." />
+
+<meta name="theme-color" content="#06080B" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="./assets/washee-mark.svg" />
+<meta name="apple-mobile-web-app-title" content="washee" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<main class="app">
+  <!-- HEADER — the mark links back to the landing page -->
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="washee home">
+      <img class="mark" src="./assets/washee-mark.svg" alt="" width="26" height="26" />
+      <span class="word">washee</span>
+    </a>
+    <div class="lang" role="group" aria-label="Language">
+      <button class="lang-btn" type="button" data-lang="vi">VI</button>
+      <button class="lang-btn" type="button" data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <!-- BOOK CARD -->
+  <section class="card hud" aria-labelledby="bookTitle">
+    <div class="eyebrow"><span class="stripe"><i></i><i></i><i></i></span> <span data-i18n="eyebrow">on-demand · comes to your car</span></div>
+    <h1 id="bookTitle" class="title"><span data-i18n="titleLead">Book a</span> <span class="grad-text" data-i18n="titleAccent">wash</span></h1>
+    <p class="sub" data-i18n="sub">A vetted pro comes to your car. Tap below, drop your phone &amp; address, and we’ll call to confirm.</p>
+
+    <!-- Selected wash — shown when arriving from a tier CTA (?tier=glow|plus) -->
+    <div id="tierChip" class="wash-chip" hidden aria-live="polite">
+      <span class="wash-chip__k" data-i18n="washPicked">Your wash</span>
+      <span class="wash-chip__v"><span id="tierName" class="grad-text"></span> <span id="tierPrice" class="wash-chip__price"></span></span>
+    </div>
+
+    <!-- STEP 1 · call to action -->
+    <button id="startBtn" class="btn primary submit" type="button" data-i18n="start">Book a wash</button>
+
+    <!-- STEP 2 · details (revealed on tap) -->
+    <form id="bookForm" class="form" hidden novalidate>
+      <div class="block">
+        <label class="block__label" for="phone" data-i18n="phoneLabel">Phone number</label>
+        <input id="phone" class="input" type="tel" inputmode="tel" autocomplete="tel"
+               placeholder="+84 9xx xxx xxx" />
+      </div>
+      <div class="block">
+        <label class="block__label" for="address" data-i18n="addressLabel">Address</label>
+        <textarea id="address" class="input area" rows="3" autocomplete="street-address"
+                  data-i18n-ph="addressPh" placeholder="House no., street, ward, district…"></textarea>
+      </div>
+      <p id="formError" class="msg err" hidden></p>
+      <button id="submitBtn" class="btn primary submit" type="submit">
+        <span class="lbl" data-i18n="submit">Confirm booking</span>
+        <span class="spin" hidden></span>
+      </button>
+      <p class="fineprint" data-i18n="fineprint">We’ll call to confirm the time · no payment now.</p>
+    </form>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="card result" hidden aria-live="polite"></section>
+
+  <footer class="foot">washee · mvp v0</footer>
+</main>
+
+<script src="./app.js" defer></script>
+</body>
+</html>

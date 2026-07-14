@@ -1,0 +1,5 @@
+# Local env & Vercel state — never commit. Production secrets live in Vercel env vars;
+# .env is only for local `vercel dev`. Copy .env.example → .env and fill it in.
+.env
+.env*.local
+.vercel
