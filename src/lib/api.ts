@@ -19,13 +19,16 @@ export class ApiRequestError extends Error {
 interface RequestOptions {
   method?: string;
   body?: unknown;
-  auth?: boolean; // attach the bearer token (default true)
-  retry?: boolean; // internal: allow one 401 → refresh retry (default true)
+  auth?: boolean; // attach the user bearer (default true)
+  admin?: boolean; // attach the admin bearer instead of the user one
+  retry?: boolean; // internal: allow one user 401 -> refresh retry (default true)
 }
 
 function send(path: string, opts: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (opts.auth !== false && tokenStore.access) {
+  if (opts.admin) {
+    if (tokenStore.adminAccess) headers.Authorization = `Bearer ${tokenStore.adminAccess}`;
+  } else if (opts.auth !== false && tokenStore.access) {
     headers.Authorization = `Bearer ${tokenStore.access}`;
   }
   return fetch(`${BASE}${path}`, {
@@ -35,7 +38,7 @@ function send(path: string, opts: RequestOptions): Promise<Response> {
   });
 }
 
-// Silently exchange the refresh token for a new pair. Returns success.
+// Silently exchange the (user) refresh token for a new pair. Returns success.
 async function refreshTokens(): Promise<boolean> {
   const refresh = tokenStore.refresh;
   if (!refresh) return false;
@@ -52,15 +55,15 @@ async function refreshTokens(): Promise<boolean> {
   return true;
 }
 
-// api performs a typed JSON request, transparently refreshing once on a 401.
+// api performs a typed JSON request. User requests transparently refresh once on
+// a 401; admin requests drop the (access-only) admin token on a 401.
 export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   let res = await send(path, opts);
 
-  if (res.status === 401 && opts.auth !== false && opts.retry !== false && tokenStore.refresh) {
-    if (await refreshTokens()) {
-      res = await send(path, { ...opts, retry: false });
-    }
+  if (res.status === 401 && !opts.admin && opts.auth !== false && opts.retry !== false && tokenStore.refresh) {
+    if (await refreshTokens()) res = await send(path, { ...opts, retry: false });
   }
+  if (res.status === 401 && opts.admin) tokenStore.clearAdmin();
 
   if (res.status === 204) return undefined as T;
 

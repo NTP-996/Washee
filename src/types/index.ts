@@ -55,6 +55,32 @@ export interface ReferralSummary {
   coupons: Coupon[];
 }
 
+export interface Booking {
+  id: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  slotId: string;
+  date: string;
+  startTime: string;
+  durationMinutes: number;
+  price: number;
+  carLocationId: string;
+  phoneNumber: string;
+  createdAt: string;
+}
+
+export interface AdminFeedItem {
+  id: string;
+  status: string;
+  userEmail: string;
+  phoneNumber: string;
+  date: string;
+  startTime: string;
+  price: number;
+  locationLabel: string;
+  locationAddress: string;
+  createdAt: string;
+}
+
 // Standard error envelope: { error: { code, message, details? } }.
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };

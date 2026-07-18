@@ -7,6 +7,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import RequireAuth from './components/RequireAuth';
+import RequireAdminRoute from './components/admin/RequireAdminRoute';
 
 export default function App() {
   return (
@@ -31,7 +32,14 @@ export default function App() {
         }
       />
       <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <RequireAdminRoute>
+            <AdminDashboardPage />
+          </RequireAdminRoute>
+        }
+      />
       <Route path="*" element={<LandingPage />} />
     </Routes>
   );
