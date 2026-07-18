@@ -49,6 +49,12 @@ export interface BookingRequest {
   couponId?: string;
 }
 
+export interface ReferralSummary {
+  code: string;
+  shareUrl: string;
+  coupons: Coupon[];
+}
+
 // Standard error envelope: { error: { code, message, details? } }.
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };
