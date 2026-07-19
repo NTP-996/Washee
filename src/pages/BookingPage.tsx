@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiRequestError } from '../lib/api';
 import { formatVnd } from '../lib/format';
-import type { Booking, CalendarSlot, CarLocation } from '../types';
+import type { Booking, CalendarSlot, CarLocation, Coupon, ReferralSummary } from '../types';
 import SlotPicker from '../components/booking/SlotPicker';
 import BookingHistory from '../components/booking/BookingHistory';
 import { Button } from '../components/ui';
@@ -20,6 +20,8 @@ export default function BookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [locationId, setLocationId] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [useCoupon, setUseCoupon] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
@@ -38,6 +40,14 @@ export default function BookingPage() {
       /* ignore */
     }
   }
+  async function loadCoupons(): Promise<void> {
+    try {
+      const ref = await api<ReferralSummary>('/api/users/me/referral');
+      setCoupons(ref.coupons.filter((c) => c.status === 'available'));
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     void loadSlots(date);
@@ -52,7 +62,15 @@ export default function BookingPage() {
       })
       .catch(() => undefined);
     void loadBookings();
+    void loadCoupons();
   }, []);
+
+  const coupon = coupons[0] ?? null;
+  const applying = !!coupon && useCoupon;
+  const effectivePrice =
+    selectedSlot && applying
+      ? Math.round(selectedSlot.price * (1 - coupon.discountPercent / 100))
+      : (selectedSlot?.price ?? 0);
 
   async function confirm(): Promise<void> {
     if (!selectedSlot || !locationId) return;
@@ -62,11 +80,15 @@ export default function BookingPage() {
     try {
       await api('/api/bookings', {
         method: 'POST',
-        body: { slotId: selectedSlot.id, carLocationId: locationId },
+        body: {
+          slotId: selectedSlot.id,
+          carLocationId: locationId,
+          couponId: applying ? coupon.id : undefined,
+        },
       });
       setSuccess(`Booked ${selectedSlot.date} at ${selectedSlot.startTime}. See you there!`);
       setSelectedSlot(null);
-      await Promise.all([loadSlots(date), loadBookings()]);
+      await Promise.all([loadSlots(date), loadBookings(), loadCoupons()]);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'Could not book that slot');
     } finally {
@@ -76,7 +98,7 @@ export default function BookingPage() {
 
   async function cancel(id: string): Promise<void> {
     await api(`/api/bookings/${id}/cancel`, { method: 'PATCH' }).catch(() => undefined);
-    await Promise.all([loadBookings(), loadSlots(date)]);
+    await Promise.all([loadBookings(), loadSlots(date), loadCoupons()]);
   }
 
   return (
@@ -124,9 +146,22 @@ export default function BookingPage() {
                 ))}
               </select>
             </label>
+
+            {coupon && (
+              <label className="mb-4 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={useCoupon} onChange={(e) => setUseCoupon(e.target.checked)} />
+                Apply my {coupon.discountPercent}% off coupon
+              </label>
+            )}
+
             <Button onClick={confirm} disabled={busy || !locationId} className="w-full">
-              {busy ? '…' : `Confirm ${selectedSlot.startTime} · ${formatVnd(selectedSlot.price)}`}
+              {busy ? '…' : `Confirm ${selectedSlot.startTime} · ${formatVnd(effectivePrice)}`}
             </Button>
+            {applying && (
+              <p className="mt-2 text-center text-xs text-brand-from">
+                {coupon.discountPercent}% off applied — was {formatVnd(selectedSlot.price)}
+              </p>
+            )}
           </div>
         )}
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}

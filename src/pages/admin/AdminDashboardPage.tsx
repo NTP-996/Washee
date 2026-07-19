@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../lib/auth';
 import CalendarEditor from '../../components/admin/CalendarEditor';
 import LiveBookingFeed from '../../components/admin/LiveBookingFeed';
+import CouponTracker from '../../components/admin/CouponTracker';
 
 export default function AdminDashboardPage() {
   const nav = useNavigate();
+  const [couponRefresh, setCouponRefresh] = useState(0);
+
   function logout(): void {
     tokenStore.clearAdmin();
     nav('/admin/login', { replace: true });
@@ -23,7 +27,10 @@ export default function AdminDashboardPage() {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <CalendarEditor />
-        <LiveBookingFeed />
+        <LiveBookingFeed onComplete={() => setCouponRefresh((n) => n + 1)} />
+      </div>
+      <div className="mt-6">
+        <CouponTracker refreshKey={couponRefresh} />
       </div>
     </main>
   );

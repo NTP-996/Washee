@@ -81,6 +81,33 @@ export interface AdminFeedItem {
   createdAt: string;
 }
 
+export interface AdminCoupon {
+  id: string;
+  ownerUserId: string;
+  ownerEmail: string;
+  discountPercent: number;
+  status: 'available' | 'redeemed' | 'expired';
+  createdAt: string;
+  sourceBooking: { id: string; refereeEmail: string; slotDate: string; slotStartTime: string };
+  redeemedAt: string | null;
+  redeemedBooking: { id: string; slotDate: string; slotStartTime: string } | null;
+  voidedByAdminUsername: string | null;
+  voidReason: string | null;
+}
+
+export interface AdminCouponSummary {
+  totalCreated: number;
+  available: number;
+  redeemed: number;
+  expired: number;
+}
+
+export interface CompleteBookingResult {
+  bookingId: string;
+  status: string;
+  couponIssued: boolean;
+}
+
 // Standard error envelope: { error: { code, message, details? } }.
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };
