@@ -15,7 +15,8 @@ const TIERS = {
   plus: "Glow Plus (400k₫)",
 };
 
-module.exports = async function handler(req, res) {
+// ESM (package.json has "type": "module"): export default, not module.exports.
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: "method_not_allowed" });
@@ -70,4 +71,4 @@ module.exports = async function handler(req, res) {
   } catch {
     return res.status(502).json({ ok: false, error: "telegram_unreachable" });
   }
-};
+}
