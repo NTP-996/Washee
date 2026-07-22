@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ApiRequestError } from '../../lib/api';
 import { tokenStore } from '../../lib/auth';
-import { Button, Field, TextInput } from '../../components/ui';
+import AppHeader from '../../components/AppHeader';
+import { Button, CornerBrackets, Field, TextInput } from '../../components/ui';
 
 interface AdminLoginResult {
   accessToken: string;
@@ -36,33 +37,37 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-5">
-      <div className="w-full max-w-sm rounded-2xl border border-hairline bg-panel p-8">
-        <div className="speed-stripe mb-5 h-1 w-12 rounded-full" />
-        <h1 className="mb-6 text-2xl font-extrabold uppercase tracking-tight">Admin</h1>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <Field label="Username">
-            <TextInput
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              required
-            />
-          </Field>
-          <Field label="Password">
-            <TextInput
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </Field>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" disabled={busy} className="w-full">
-            {busy ? '…' : 'Sign in'}
-          </Button>
-        </form>
+    <main className="flex min-h-screen flex-col bg-canvas">
+      <AppHeader sub="admin" />
+      <div className="flex flex-1 items-center justify-center px-5 py-12">
+        <div className="relative w-full max-w-sm rounded-2xl border border-hairline bg-panel p-6 sm:p-8">
+          <CornerBrackets />
+          <div className="speed-stripe mb-5 h-1 w-12 rounded-full" />
+          <h1 className="mb-6 text-2xl font-extrabold uppercase tracking-tight">Admin</h1>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <Field label="Username">
+              <TextInput
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                required
+              />
+            </Field>
+            <Field label="Password">
+              <TextInput
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </Field>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <Button type="submit" disabled={busy} className="w-full">
+              {busy ? '…' : 'Sign in'}
+            </Button>
+          </form>
+        </div>
       </div>
     </main>
   );

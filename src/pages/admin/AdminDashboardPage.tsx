@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../lib/auth';
+import AppHeader, { headerPill } from '../../components/AppHeader';
 import CalendarEditor from '../../components/admin/CalendarEditor';
 import LiveBookingFeed from '../../components/admin/LiveBookingFeed';
 import CouponTracker from '../../components/admin/CouponTracker';
@@ -20,23 +21,12 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-canvas text-ink">
-      <header className="border-b border-hairline">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-          <div className="flex items-center gap-3">
-            <img src="/washee-mark.svg" alt="" className="h-7 w-7" />
-            <div>
-              <div className="text-sm font-semibold tracking-tight">washee · admin</div>
-              <div className="text-xs text-muted">{tokenStore.adminUsername}</div>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="rounded-full border border-hairline px-4 py-2 text-sm transition hover:border-brand-to"
-          >
-            Log out
-          </button>
-        </div>
-      </header>
+      <AppHeader sub="admin">
+        <span className="hidden px-2 text-sm text-muted sm:block">{tokenStore.adminUsername}</span>
+        <button onClick={logout} className={`${headerPill} text-muted hover:text-ink`}>
+          Log out
+        </button>
+      </AppHeader>
 
       <div className="mx-auto max-w-5xl space-y-6 px-5 py-8 sm:py-10">
         <div>

@@ -7,6 +7,7 @@ import { useI18n } from '../lib/i18n';
 import type { Booking, CalendarSlot, CarLocation, Coupon, ReferralSummary } from '../types';
 import SlotPicker from '../components/booking/SlotPicker';
 import BookingHistory from '../components/booking/BookingHistory';
+import AppHeader, { headerPill } from '../components/AppHeader';
 import { Button, CornerBrackets, Field } from '../components/ui';
 
 export default function BookingPage() {
@@ -105,20 +106,11 @@ export default function BookingPage() {
 
   return (
     <main className="min-h-screen bg-canvas text-ink">
-      <header className="border-b border-hairline">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/washee-mark.svg" alt="" className="h-7 w-7" />
-            <span className="text-sm font-semibold tracking-tight">washee</span>
-          </Link>
-          <Link
-            to="/profile"
-            className="rounded-full border border-hairline px-4 py-2 text-sm transition hover:border-brand-to"
-          >
-            Profile
-          </Link>
-        </div>
-      </header>
+      <AppHeader>
+        <Link to="/profile" className={headerPill}>
+          Profile
+        </Link>
+      </AppHeader>
 
       <div className="mx-auto max-w-4xl px-5 py-8 sm:py-10">
         <div className="mb-6">
