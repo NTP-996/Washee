@@ -15,22 +15,38 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl bg-canvas px-5 py-10 text-ink">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin dashboard</h1>
-          <p className="text-sm text-muted">{tokenStore.adminUsername}</p>
+    <main className="min-h-screen bg-canvas text-ink">
+      <header className="border-b border-hairline">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-3">
+            <img src="/washee-mark.svg" alt="" className="h-7 w-7" />
+            <div>
+              <div className="text-sm font-semibold tracking-tight">washee · admin</div>
+              <div className="text-xs text-muted">{tokenStore.adminUsername}</div>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="rounded-full border border-hairline px-4 py-2 text-sm transition hover:border-brand-to"
+          >
+            Log out
+          </button>
         </div>
-        <button onClick={logout} className="rounded-full border border-hairline px-4 py-2 text-sm">
-          Log out
-        </button>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      </header>
+
+      <div className="mx-auto max-w-5xl space-y-6 px-5 py-8 sm:py-10">
+        <div>
+          <div className="speed-stripe mb-3 h-1 w-12 rounded-full" />
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
+          <p className="mt-1.5 text-sm text-muted">Manage availability, live bookings, and referral coupons.</p>
+        </div>
+
         <CalendarEditor />
-        <LiveBookingFeed onComplete={() => setCouponRefresh((n) => n + 1)} />
-      </div>
-      <div className="mt-6">
-        <CouponTracker refreshKey={couponRefresh} />
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <LiveBookingFeed onComplete={() => setCouponRefresh((n) => n + 1)} />
+          <CouponTracker refreshKey={couponRefresh} />
+        </div>
       </div>
     </main>
   );

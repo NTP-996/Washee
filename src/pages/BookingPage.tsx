@@ -2,19 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiRequestError } from '../lib/api';
 import { formatVnd } from '../lib/format';
+import { formatLong, todayISO } from '../lib/date';
+import { useI18n } from '../lib/i18n';
 import type { Booking, CalendarSlot, CarLocation, Coupon, ReferralSummary } from '../types';
 import SlotPicker from '../components/booking/SlotPicker';
 import BookingHistory from '../components/booking/BookingHistory';
-import { Button } from '../components/ui';
-
-function tomorrow(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
+import { Button, CornerBrackets, Field } from '../components/ui';
 
 export default function BookingPage() {
-  const [date, setDate] = useState(tomorrow());
+  const { lang } = useI18n();
+  const [date, setDate] = useState(todayISO());
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
   const [locations, setLocations] = useState<CarLocation[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
@@ -51,6 +48,7 @@ export default function BookingPage() {
 
   useEffect(() => {
     void loadSlots(date);
+    setSelectedSlot(null); // a new day invalidates the previously picked time
   }, [date]);
 
   useEffect(() => {
@@ -86,7 +84,7 @@ export default function BookingPage() {
           couponId: applying ? coupon.id : undefined,
         },
       });
-      setSuccess(`Booked ${selectedSlot.date} at ${selectedSlot.startTime}. See you there!`);
+      setSuccess(`Booked ${formatLong(selectedSlot.date, lang)} at ${selectedSlot.startTime}. See you there.`);
       setSelectedSlot(null);
       await Promise.all([loadSlots(date), loadBookings(), loadCoupons()]);
     } catch (err) {
@@ -102,42 +100,72 @@ export default function BookingPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl bg-canvas px-5 py-10 text-ink">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Book a wash</h1>
-        <Link to="/profile" className="rounded-full border border-hairline px-4 py-2 text-sm">
-          Profile
-        </Link>
-      </div>
+    <main className="min-h-screen bg-canvas text-ink">
+      <header className="border-b border-hairline">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/washee-mark.svg" alt="" className="h-7 w-7" />
+            <span className="text-sm font-semibold tracking-tight">washee</span>
+          </Link>
+          <Link
+            to="/profile"
+            className="rounded-full border border-hairline px-4 py-2 text-sm transition hover:border-brand-to"
+          >
+            Profile
+          </Link>
+        </div>
+      </header>
 
-      {locations.length === 0 && (
-        <p className="mb-6 rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-sm text-muted">
-          Add a car location in your{' '}
-          <Link to="/profile" className="text-brand-from">
-            profile
-          </Link>{' '}
-          first.
-        </p>
-      )}
+      <div className="mx-auto max-w-4xl px-5 py-8 sm:py-10">
+        <div className="mb-6">
+          <div className="speed-stripe mb-3 h-1 w-12 rounded-full" />
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Book a wash</h1>
+          <p className="mt-1.5 text-sm text-muted">Pick a day and time — a vetted pro comes to your car.</p>
+        </div>
 
-      <section className="rounded-2xl border border-hairline bg-panel p-6">
-        <div className="speed-stripe mb-5 h-1 w-12 rounded-full" />
-        <SlotPicker
-          date={date}
-          slots={slots}
-          selectedId={selectedSlot?.id ?? null}
-          onDateChange={setDate}
-          onPick={setSelectedSlot}
-        />
+        {locations.length === 0 && (
+          <p className="mb-5 rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-sm text-muted">
+            Add a car location in your{' '}
+            <Link to="/profile" className="text-brand-from underline-offset-2 hover:underline">
+              profile
+            </Link>{' '}
+            first.
+          </p>
+        )}
+
+        <section className="relative rounded-2xl border border-hairline bg-panel p-5 sm:p-6">
+          <CornerBrackets />
+          <SlotPicker
+            date={date}
+            slots={slots}
+            selectedId={selectedSlot?.id ?? null}
+            onDateChange={setDate}
+            onPick={setSelectedSlot}
+          />
+        </section>
 
         {selectedSlot && (
-          <div className="mt-6 border-t border-hairline pt-5">
-            <label className="mb-3 block">
-              <span className="mb-1.5 block text-sm text-muted">Car location</span>
+          <section className="mt-4 rounded-2xl border border-hairline bg-panel-2 p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-widest text-muted">Selected</div>
+                <div className="font-semibold tabular-nums">
+                  {formatLong(selectedSlot.date, lang)} · {selectedSlot.startTime}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedSlot(null)}
+                className="shrink-0 text-sm text-muted transition hover:text-ink"
+              >
+                Change
+              </button>
+            </div>
+
+            <Field label="Car location">
               <select
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
-                className="w-full rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-ink outline-none focus:border-brand-to"
+                className="w-full rounded-xl border border-hairline bg-panel px-4 py-3 text-ink outline-none transition focus:border-brand-to"
               >
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -145,31 +173,37 @@ export default function BookingPage() {
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
 
             {coupon && (
-              <label className="mb-4 flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={useCoupon} onChange={(e) => setUseCoupon(e.target.checked)} />
+              <label className="mt-4 flex items-center gap-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useCoupon}
+                  onChange={(e) => setUseCoupon(e.target.checked)}
+                  className="h-4 w-4 accent-brand-to"
+                />
                 Apply my {coupon.discountPercent}% off coupon
               </label>
             )}
 
-            <Button onClick={confirm} disabled={busy || !locationId} className="w-full">
-              {busy ? '…' : `Confirm ${selectedSlot.startTime} · ${formatVnd(effectivePrice)}`}
+            <Button onClick={confirm} disabled={busy || !locationId} className="mt-5 w-full">
+              {busy ? '…' : `Confirm · ${formatVnd(effectivePrice)}`}
             </Button>
             {applying && (
               <p className="mt-2 text-center text-xs text-brand-from">
                 {coupon.discountPercent}% off applied — was {formatVnd(selectedSlot.price)}
               </p>
             )}
-          </div>
+          </section>
         )}
+
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
         {success && <p className="mt-4 text-sm text-brand-from">{success}</p>}
-      </section>
 
-      <h2 className="mb-3 mt-8 text-sm uppercase tracking-widest text-muted">Your bookings</h2>
-      <BookingHistory bookings={bookings} onCancel={cancel} />
+        <h2 className="mb-3 mt-10 text-xs uppercase tracking-widest text-muted">Your bookings</h2>
+        <BookingHistory bookings={bookings} onCancel={cancel} />
+      </div>
     </main>
   );
 }
