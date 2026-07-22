@@ -19,6 +19,7 @@ export default function BookingPage() {
   const [locationId, setLocationId] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [couponsLoaded, setCouponsLoaded] = useState(false);
   const [useCoupon, setUseCoupon] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -44,6 +45,8 @@ export default function BookingPage() {
       setCoupons(ref.coupons.filter((c) => c.status === 'available'));
     } catch {
       /* ignore */
+    } finally {
+      setCouponsLoaded(true);
     }
   }
 
@@ -126,6 +129,25 @@ export default function BookingPage() {
               profile
             </Link>{' '}
             first.
+          </p>
+        )}
+
+        {coupon && (
+          <p className="mb-5 flex items-center gap-2.5 rounded-xl border border-brand-to/40 bg-panel-2 px-4 py-3 text-sm">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-brand-to" aria-hidden />
+            <span>
+              <span className="font-semibold text-brand-from">{coupon.discountPercent}% off</span>{' '}
+              referral coupon ready — applied when you confirm.
+            </span>
+          </p>
+        )}
+        {couponsLoaded && !coupon && (
+          <p className="mb-5 text-sm text-muted">
+            Earn 50% off:{' '}
+            <Link to="/profile" className="text-brand-from underline-offset-2 hover:underline">
+              share your referral link
+            </Link>{' '}
+            — you get a coupon after your friend&apos;s first wash.
           </p>
         )}
 
