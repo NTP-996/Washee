@@ -9,6 +9,16 @@
    upward with `min-width` media queries — never stripped back with max-width.
    ========================================================================== */
 
+/* Everything here must stay inside Tailwind's `components` cascade layer: these
+   legacy element/reset rules (body, button, the * margin/padding reset) may
+   override preflight (`base`) but must LOSE to utility classes (`utilities`) on
+   the app pages — unlayered, they strip padding/margins/button styles SPA-wide.
+   The statement below pins the canonical layer order even when this file lands
+   first in the bundle (layer order is fixed by first mention). */
+@layer theme, base, components, utilities;
+
+@layer components {
+
 /* ----------------------------- Tokens ----------------------------------- */
 :root {
   /* Brand voltage */
@@ -238,6 +248,9 @@ em { font-style: normal; }
 
 .nav__actions { display: flex; align-items: center; gap: 12px; }
 .nav__signin { display: none; }
+/* The nav "Book a wash" CTA duplicates the hero + burger-menu CTAs; below 640px
+   it crowds the wordmark off-screen, so it only appears alongside the links. */
+.nav__book { display: none; }
 
 /* Language toggle (EN / VI) */
 .lang { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--hairline); border-radius: var(--r-pill); background: var(--glass); }
@@ -512,6 +525,7 @@ html[lang="vi"] .step__title { line-height: 1.3; }
 @media (min-width: 640px) {
   .nav__links { display: flex; }
   .nav__signin { display: inline-flex; }
+  .nav__book { display: inline-flex; }
   .nav__burger { display: none; }
 
   .booking { flex-direction: row; align-items: center; }
@@ -558,3 +572,5 @@ html[lang="vi"] .step__title { line-height: 1.3; }
   .marquee__track, .pulse, .map__washer-ping { animation: none; }
   .cursor-glow { display: none; }
 }
+
+} /* @layer components */

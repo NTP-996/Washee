@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-5">
       <div className="w-full max-w-sm rounded-2xl border border-hairline bg-panel p-8">
         <div className="speed-stripe mb-5 h-1 w-12 rounded-full" />
-        <h1 className="mb-6 text-2xl font-bold tracking-tight">Admin</h1>
+        <h1 className="mb-6 text-2xl font-extrabold uppercase tracking-tight">Admin</h1>
         <form onSubmit={onSubmit} className="space-y-4">
           <Field label="Username">
             <TextInput

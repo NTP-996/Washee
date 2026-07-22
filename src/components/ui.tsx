@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react
 export function Button({ children, className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`brand-gradient rounded-full px-6 py-3 font-semibold text-[color:var(--color-on-accent)] transition disabled:opacity-60 ${className}`}
+      className={`brand-gradient rounded-full px-6 py-3 font-semibold text-[color:var(--color-on-accent)] transition hover:brightness-110 active:brightness-95 disabled:opacity-60 ${className}`}
       {...props}
     >
       {children}

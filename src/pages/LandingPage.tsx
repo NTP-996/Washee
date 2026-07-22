@@ -149,7 +149,7 @@ export default function LandingPage() {
             <Link className="btn btn--ghost nav__signin" to="/login">
               {c.nav_signin}
             </Link>
-            <Link className="btn btn--primary btn--sm magnetic" to={bookTo}>
+            <Link className="btn btn--primary btn--sm magnetic nav__book" to={bookTo}>
               {c.cta_book}
             </Link>
             <button

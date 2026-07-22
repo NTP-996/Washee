@@ -70,7 +70,7 @@ export default function CalendarEditor() {
     <section className="relative rounded-2xl border border-hairline bg-panel p-5 sm:p-6">
       <CornerBrackets />
       <h2 className="mb-4 text-xs uppercase tracking-widest text-muted">Availability</h2>
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_15rem]">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem]">
         <Calendar selected={date} onSelect={setDate} marked={marked} />
 
         <div className="mt-6 border-t border-hairline pt-6 md:mt-0 md:border-l md:border-t-0 md:pl-6 md:pt-0">
@@ -84,17 +84,17 @@ export default function CalendarEditor() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 required
-                className="w-full rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm tabular-nums text-ink outline-none focus:border-brand-to"
+                className="w-full rounded-lg border border-hairline bg-panel-2 px-2 py-2 text-sm tabular-nums text-ink outline-none focus:border-brand-to"
               />
             </label>
-            <label className="min-w-0 flex-1">
+            <label className="w-20 shrink-0">
               <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Price ₫</span>
               <input
                 inputMode="numeric"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
-                className="w-full rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm tabular-nums text-ink outline-none focus:border-brand-to"
+                className="w-full rounded-lg border border-hairline bg-panel-2 px-2 py-2 text-sm tabular-nums text-ink outline-none focus:border-brand-to"
               />
             </label>
             <button

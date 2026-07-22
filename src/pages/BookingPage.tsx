@@ -47,6 +47,10 @@ export default function BookingPage() {
   }
 
   useEffect(() => {
+    document.title = 'washee — Book a wash';
+  }, []);
+
+  useEffect(() => {
     void loadSlots(date);
     setSelectedSlot(null); // a new day invalidates the previously picked time
   }, [date]);
@@ -119,7 +123,7 @@ export default function BookingPage() {
       <div className="mx-auto max-w-4xl px-5 py-8 sm:py-10">
         <div className="mb-6">
           <div className="speed-stripe mb-3 h-1 w-12 rounded-full" />
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Book a wash</h1>
+          <h1 className="text-2xl font-extrabold uppercase tracking-tight sm:text-3xl">Book a wash</h1>
           <p className="mt-1.5 text-sm text-muted">Pick a day and time — a vetted pro comes to your car.</p>
         </div>
 
@@ -187,14 +191,23 @@ export default function BookingPage() {
               </label>
             )}
 
-            <Button onClick={confirm} disabled={busy || !locationId} className="mt-5 w-full">
-              {busy ? '…' : `Confirm · ${formatVnd(effectivePrice)}`}
-            </Button>
+            <div className="mt-5 flex items-baseline justify-between border-t border-hairline pt-4">
+              <span className="text-sm text-muted">Total</span>
+              <span className="tabular-nums">
+                {applying && (
+                  <s className="mr-2 text-sm text-muted">{formatVnd(selectedSlot.price)}</s>
+                )}
+                <span className="text-lg font-bold">{formatVnd(effectivePrice)}</span>
+              </span>
+            </div>
             {applying && (
-              <p className="mt-2 text-center text-xs text-brand-from">
-                {coupon.discountPercent}% off applied — was {formatVnd(selectedSlot.price)}
+              <p className="mt-1 text-right text-xs text-brand-from">
+                {coupon.discountPercent}% referral coupon applied
               </p>
             )}
+            <Button onClick={confirm} disabled={busy || !locationId} className="mt-4 w-full">
+              {busy ? '…' : 'Confirm booking'}
+            </Button>
           </section>
         )}
 

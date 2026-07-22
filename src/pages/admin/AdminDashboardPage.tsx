@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../lib/auth';
 import CalendarEditor from '../../components/admin/CalendarEditor';
@@ -8,6 +8,10 @@ import CouponTracker from '../../components/admin/CouponTracker';
 export default function AdminDashboardPage() {
   const nav = useNavigate();
   const [couponRefresh, setCouponRefresh] = useState(0);
+
+  useEffect(() => {
+    document.title = 'washee · admin';
+  }, []);
 
   function logout(): void {
     tokenStore.clearAdmin();
@@ -37,7 +41,7 @@ export default function AdminDashboardPage() {
       <div className="mx-auto max-w-5xl space-y-6 px-5 py-8 sm:py-10">
         <div>
           <div className="speed-stripe mb-3 h-1 w-12 rounded-full" />
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
+          <h1 className="text-2xl font-extrabold uppercase tracking-tight sm:text-3xl">Dashboard</h1>
           <p className="mt-1.5 text-sm text-muted">Manage availability, live bookings, and referral coupons.</p>
         </div>
 
