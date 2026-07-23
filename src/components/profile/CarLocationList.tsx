@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '../../lib/api';
+import { useI18n } from '../../lib/i18n';
 import type { CarLocation, LocationShortcut } from '../../types';
 import { Button, Field, TextInput } from '../ui';
 
@@ -27,6 +28,7 @@ const EMPTY: FormState = {
 // Saved car locations: list + add/edit/delete + pin (set default). The `shortcut`
 // tag is only offered on the pinned location (matches the backend rule).
 export default function CarLocationList() {
+  const { t } = useI18n();
   const [locations, setLocations] = useState<CarLocation[]>([]);
   const [form, setForm] = useState<FormState | null>(null);
   const [error, setError] = useState('');
@@ -69,7 +71,7 @@ export default function CarLocationList() {
               }
             : f,
         ),
-      () => setError('Could not read your current location'),
+      () => setError(t('loc.geoFail')),
     );
   }
 
@@ -92,7 +94,7 @@ export default function CarLocationList() {
       setForm(null);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save location');
+      setError(err instanceof Error ? err.message : t('loc.saveFail'));
     } finally {
       setBusy(false);
     }
@@ -121,15 +123,18 @@ export default function CarLocationList() {
   return (
     <section className="rounded-2xl border border-hairline bg-panel p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm uppercase tracking-widest text-muted">Saved car locations</h2>
+        <h2 className="text-sm uppercase tracking-widest text-muted">{t('loc.title')}</h2>
         {!form && (
-          <button onClick={() => setForm({ ...EMPTY })} className="text-sm text-brand-from hover:underline">
-            + Add
+          <button
+            onClick={() => setForm({ ...EMPTY })}
+            className="text-sm text-brand-from hover:underline"
+          >
+            {t('loc.add')}
           </button>
         )}
       </div>
 
-      {locations.length === 0 && !form && <p className="text-sm text-muted">No saved locations yet.</p>}
+      {locations.length === 0 && !form && <p className="text-sm text-muted">{t('loc.empty')}</p>}
 
       <ul className="space-y-2">
         {locations.map((l) => (
@@ -142,12 +147,12 @@ export default function CarLocationList() {
                 <span className="font-semibold">{l.label}</span>
                 {l.isDefault && (
                   <span className="brand-gradient rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-on-accent)]">
-                    Default
+                    {t('loc.default')}
                   </span>
                 )}
                 {l.shortcut && (
                   <span className="rounded-full border border-hairline px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted">
-                    {l.shortcut}
+                    {t(`shortcut.${l.shortcut}`)}
                   </span>
                 )}
               </div>
@@ -156,14 +161,14 @@ export default function CarLocationList() {
             <div className="flex shrink-0 gap-3 text-sm">
               {!l.isDefault && (
                 <button onClick={() => makeDefault(l)} className="text-brand-from hover:underline">
-                  Pin
+                  {t('loc.pin')}
                 </button>
               )}
               <button onClick={() => openEdit(l)} className="text-muted hover:text-ink">
-                Edit
+                {t('common.edit')}
               </button>
               <button onClick={() => remove(l.id)} className="text-muted hover:text-red-400">
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </li>
@@ -172,15 +177,15 @@ export default function CarLocationList() {
 
       {form && (
         <form onSubmit={submit} className="mt-4 space-y-3 border-t border-hairline pt-4">
-          <Field label="Label">
+          <Field label={t('loc.label')}>
             <TextInput
               required
               value={form.label}
               onChange={(e) => setForm({ ...form, label: e.target.value })}
-              placeholder="Home, Office…"
+              placeholder={t('loc.labelPlaceholder')}
             />
           </Field>
-          <Field label="Address">
+          <Field label={t('loc.address')}>
             <TextInput
               required
               value={form.address}
@@ -188,7 +193,7 @@ export default function CarLocationList() {
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Latitude">
+            <Field label={t('loc.latitude')}>
               <TextInput
                 required
                 inputMode="decimal"
@@ -196,7 +201,7 @@ export default function CarLocationList() {
                 onChange={(e) => setForm({ ...form, latitude: e.target.value })}
               />
             </Field>
-            <Field label="Longitude">
+            <Field label={t('loc.longitude')}>
               <TextInput
                 required
                 inputMode="decimal"
@@ -205,8 +210,12 @@ export default function CarLocationList() {
               />
             </Field>
           </div>
-          <button type="button" onClick={useMyLocation} className="text-sm text-brand-from hover:underline">
-            Use my current location
+          <button
+            type="button"
+            onClick={useMyLocation}
+            className="text-sm text-brand-from hover:underline"
+          >
+            {t('loc.useMy')}
           </button>
 
           <label className="flex items-center gap-2 text-sm">
@@ -215,20 +224,22 @@ export default function CarLocationList() {
               checked={form.isDefault}
               onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
             />
-            Set as default (pinned)
+            {t('loc.setDefault')}
           </label>
 
           {form.isDefault && (
-            <Field label="Quick-pick tag">
+            <Field label={t('loc.tag')}>
               <select
                 value={form.shortcut}
-                onChange={(e) => setForm({ ...form, shortcut: e.target.value as LocationShortcut | '' })}
+                onChange={(e) =>
+                  setForm({ ...form, shortcut: e.target.value as LocationShortcut | '' })
+                }
                 className="w-full rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-ink outline-none focus:border-brand-to"
               >
-                <option value="">None</option>
+                <option value="">{t('loc.none')}</option>
                 {SHORTCUTS.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {t(`shortcut.${s}`)}
                   </option>
                 ))}
               </select>
@@ -238,14 +249,14 @@ export default function CarLocationList() {
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>
-              {busy ? '…' : form.id ? 'Save' : 'Add location'}
+              {busy ? '…' : form.id ? t('common.save') : t('loc.addBtn')}
             </Button>
             <button
               type="button"
               onClick={() => setForm(null)}
               className="rounded-full border border-hairline px-6 py-3 font-semibold"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </div>
         </form>

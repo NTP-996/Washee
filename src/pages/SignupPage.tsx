@@ -8,7 +8,7 @@ import AuthShell from '../components/AuthShell';
 
 export default function SignupPage() {
   const { signup } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const nav = useNavigate();
   const [params] = useSearchParams();
   const refParam = params.get('ref') ?? '';
@@ -25,10 +25,16 @@ export default function SignupPage() {
     setError('');
     setBusy(true);
     try {
-      await signup({ email, password, phone, referralCode: referralCode || undefined });
+      await signup({
+        email,
+        password,
+        phone,
+        referralCode: referralCode || undefined,
+        preferredLang: lang,
+      });
       nav('/profile', { replace: true });
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Something went wrong');
+      setError(err instanceof ApiRequestError ? err.message : t('error.generic'));
     } finally {
       setBusy(false);
     }

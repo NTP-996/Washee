@@ -10,8 +10,8 @@ export default function BookingHistory({
   bookings: Booking[];
   onCancel: (id: string) => void;
 }) {
-  const { lang } = useI18n();
-  if (bookings.length === 0) return <p className="text-sm text-muted">No bookings yet.</p>;
+  const { lang, t } = useI18n();
+  if (bookings.length === 0) return <p className="text-sm text-muted">{t('history.empty')}</p>;
   return (
     <ul className="space-y-2">
       {bookings.map((b) => (
@@ -24,13 +24,21 @@ export default function BookingHistory({
               {formatLong(b.date, lang)} · {b.startTime}
             </div>
             <div className="text-xs text-muted">
-              {formatVnd(b.price)} · <span className="uppercase">{b.status}</span>
-              {b.driverName && <> · Washer: {b.driverName}</>}
+              {formatVnd(b.price)} · <span className="uppercase">{t(`status.${b.status}`)}</span>
+              {b.driverName && (
+                <>
+                  {' '}
+                  · {t('history.washer')}: {b.driverName}
+                </>
+              )}
             </div>
           </div>
           {(b.status === 'confirmed' || b.status === 'pending') && (
-            <button onClick={() => onCancel(b.id)} className="text-sm text-muted hover:text-red-400">
-              Cancel
+            <button
+              onClick={() => onCancel(b.id)}
+              className="text-sm text-muted hover:text-red-400"
+            >
+              {t('history.cancel')}
             </button>
           )}
         </li>

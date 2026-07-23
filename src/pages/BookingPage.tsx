@@ -11,7 +11,7 @@ import AppHeader, { headerPill } from '../components/AppHeader';
 import { Button, CornerBrackets, Field } from '../components/ui';
 
 export default function BookingPage() {
-  const { lang } = useI18n();
+  const { lang, t, tf } = useI18n();
   const [date, setDate] = useState(todayISO());
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
   const [locations, setLocations] = useState<CarLocation[]>([]);
@@ -51,8 +51,8 @@ export default function BookingPage() {
   }
 
   useEffect(() => {
-    document.title = 'washee — Book a wash';
-  }, []);
+    document.title = `washee — ${t('booking.title')}`;
+  }, [t]);
 
   useEffect(() => {
     void loadSlots(date);
@@ -93,12 +93,16 @@ export default function BookingPage() {
         },
       });
       setSuccess(
-        `Booked ${formatLong(selectedSlot.date, lang)} at ${selectedSlot.startTime} — ${booked.driverName} will come to your car.`,
+        tf('bookingSuccess', {
+          date: formatLong(selectedSlot.date, lang),
+          time: selectedSlot.startTime,
+          driver: booked.driverName,
+        }),
       );
       setSelectedSlot(null);
       await Promise.all([loadSlots(date), loadBookings(), loadCoupons()]);
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Could not book that slot');
+      setError(err instanceof ApiRequestError ? err.message : t('booking.errBook'));
     } finally {
       setBusy(false);
     }
@@ -109,7 +113,7 @@ export default function BookingPage() {
     try {
       await api(`/api/bookings/${id}/cancel`, { method: 'PATCH' });
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Could not cancel that booking');
+      setError(err instanceof ApiRequestError ? err.message : t('booking.errCancel'));
     }
     await Promise.all([loadBookings(), loadSlots(date), loadCoupons()]);
   }
@@ -118,7 +122,7 @@ export default function BookingPage() {
     <main className="min-h-screen bg-canvas text-ink">
       <AppHeader>
         <Link to="/profile" className={headerPill}>
-          Profile
+          {t('nav.profile')}
         </Link>
       </AppHeader>
 
@@ -126,20 +130,18 @@ export default function BookingPage() {
         <div className="mb-6">
           <div className="speed-stripe mb-3 h-1 w-12 rounded-full" />
           <h1 className="text-2xl font-extrabold uppercase tracking-tight sm:text-3xl">
-            Book a wash
+            {t('booking.title')}
           </h1>
-          <p className="mt-1.5 text-sm text-muted">
-            Pick a day and time — a vetted pro comes to your car.
-          </p>
+          <p className="mt-1.5 text-sm text-muted">{t('booking.subtitle')}</p>
         </div>
 
         {locations.length === 0 && (
           <p className="mb-5 rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-sm text-muted">
-            Add a car location in your{' '}
+            {t('booking.noLocation.pre')}{' '}
             <Link to="/profile" className="text-brand-from underline-offset-2 hover:underline">
-              profile
+              {t('booking.noLocation.link')}
             </Link>{' '}
-            first.
+            {t('booking.noLocation.post')}
           </p>
         )}
 
@@ -147,18 +149,20 @@ export default function BookingPage() {
           <p className="mb-5 flex items-center gap-2.5 rounded-xl border border-brand-to/40 bg-panel-2 px-4 py-3 text-sm">
             <span className="h-2 w-2 shrink-0 rounded-full bg-brand-to" aria-hidden />
             <span>
-              <span className="font-semibold text-brand-from">{coupon.discountPercent}% off</span>{' '}
-              referral coupon ready — applied when you confirm.
+              <span className="font-semibold text-brand-from">
+                {tf('percentOff', { percent: coupon.discountPercent })}
+              </span>{' '}
+              {t('booking.couponReady')}
             </span>
           </p>
         )}
         {couponsLoaded && !coupon && (
           <p className="mb-5 text-sm text-muted">
-            Earn 50% off:{' '}
+            {t('booking.earn.pre')}{' '}
             <Link to="/profile" className="text-brand-from underline-offset-2 hover:underline">
-              share your referral link
+              {t('booking.earn.link')}
             </Link>{' '}
-            — you get a coupon after your friend&apos;s first wash.
+            {t('booking.earn.post')}
           </p>
         )}
 
@@ -177,7 +181,9 @@ export default function BookingPage() {
           <section className="mt-4 rounded-2xl border border-hairline bg-panel-2 p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <div className="text-[11px] uppercase tracking-widest text-muted">Selected</div>
+                <div className="text-[11px] uppercase tracking-widest text-muted">
+                  {t('booking.selected')}
+                </div>
                 <div className="font-semibold tabular-nums">
                   {formatLong(selectedSlot.date, lang)} · {selectedSlot.startTime}
                 </div>
@@ -186,11 +192,11 @@ export default function BookingPage() {
                 onClick={() => setSelectedSlot(null)}
                 className="shrink-0 text-sm text-muted transition hover:text-ink"
               >
-                Change
+                {t('booking.change')}
               </button>
             </div>
 
-            <Field label="Car location">
+            <Field label={t('booking.carLocation')}>
               <select
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
@@ -212,12 +218,12 @@ export default function BookingPage() {
                   onChange={(e) => setUseCoupon(e.target.checked)}
                   className="h-4 w-4 accent-brand-to"
                 />
-                Apply my {coupon.discountPercent}% off coupon
+                {tf('applyCoupon', { percent: coupon.discountPercent })}
               </label>
             )}
 
             <div className="mt-5 flex items-baseline justify-between border-t border-hairline pt-4">
-              <span className="text-sm text-muted">Total</span>
+              <span className="text-sm text-muted">{t('booking.total')}</span>
               <span className="tabular-nums">
                 {applying && (
                   <s className="mr-2 text-sm text-muted">{formatVnd(selectedSlot.price)}</s>
@@ -227,11 +233,11 @@ export default function BookingPage() {
             </div>
             {applying && (
               <p className="mt-1 text-right text-xs text-brand-from">
-                {coupon.discountPercent}% referral coupon applied
+                {tf('couponApplied', { percent: coupon.discountPercent })}
               </p>
             )}
             <Button onClick={confirm} disabled={busy || !locationId} className="mt-4 w-full">
-              {busy ? '…' : 'Confirm booking'}
+              {busy ? '…' : t('booking.confirm')}
             </Button>
           </section>
         )}
@@ -239,7 +245,9 @@ export default function BookingPage() {
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
         {success && <p className="mt-4 text-sm text-brand-from">{success}</p>}
 
-        <h2 className="mb-3 mt-10 text-xs uppercase tracking-widest text-muted">Your bookings</h2>
+        <h2 className="mb-3 mt-10 text-xs uppercase tracking-widest text-muted">
+          {t('booking.yourBookings')}
+        </h2>
         <BookingHistory bookings={bookings} onCancel={cancel} />
       </div>
     </main>

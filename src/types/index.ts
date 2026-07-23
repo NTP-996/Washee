@@ -8,6 +8,7 @@ export interface User {
   phone: string;
   referralCode: string;
   referredBy?: string | null;
+  preferredLang: 'en' | 'vi';
   createdAt: string;
 }
 
@@ -168,4 +169,19 @@ export interface CompleteBookingResult {
 // Standard error envelope: { error: { code, message, details? } }.
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };
+}
+
+// One row of the admin audit trail (GET /api/admin/audit-logs).
+export interface AuditLogRow {
+  id: string;
+  occurredAt: string; // RFC3339
+  actorType: 'admin' | 'driver' | 'user' | 'system';
+  actorId?: string | null;
+  actorLabel?: string | null;
+  action: string; // e.g. 'admin.driver_create', 'driver.slot_publish'
+  entityType?: string | null;
+  entityId?: string | null;
+  detail: Record<string, unknown>;
+  requestId?: string | null;
+  ip?: string | null;
 }

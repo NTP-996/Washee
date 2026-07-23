@@ -24,7 +24,7 @@ export default function LoginPage() {
       await login(email, password);
       nav(loc.state?.from?.pathname ?? '/profile', { replace: true });
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'Something went wrong');
+      setError(err instanceof ApiRequestError ? err.message : t('error.generic'));
     } finally {
       setBusy(false);
     }

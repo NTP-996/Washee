@@ -37,10 +37,18 @@ export default function Calendar({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <button type="button" onClick={() => shift(-1)} disabled={!canPrev} aria-label="Previous month" className={navBtn}>
+        <button
+          type="button"
+          onClick={() => shift(-1)}
+          disabled={!canPrev}
+          aria-label="Previous month"
+          className={navBtn}
+        >
           ‹
         </button>
-        <div className="text-sm font-semibold tracking-tight tabular-nums">{formatMonth(view.y, view.m, lang)}</div>
+        <div className="text-sm font-semibold tracking-tight tabular-nums">
+          {formatMonth(view.y, view.m, lang)}
+        </div>
         <button type="button" onClick={() => shift(1)} aria-label="Next month" className={navBtn}>
           ›
         </button>
@@ -48,7 +56,10 @@ export default function Calendar({
 
       <div className="mb-1 grid grid-cols-7 gap-1">
         {labels.map((l, i) => (
-          <div key={i} className="py-1 text-center text-[10px] font-medium uppercase tracking-wide text-muted">
+          <div
+            key={i}
+            className="py-1 text-center text-[10px] font-medium uppercase tracking-wide text-muted"
+          >
             {l}
           </div>
         ))}

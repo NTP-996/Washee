@@ -20,7 +20,7 @@ export default function SlotPicker({
   onDateChange: (d: string) => void;
   onPick: (s: CalendarSlot) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t, tf } = useI18n();
   const open = slots.filter((s) => s.status === 'available');
 
   return (
@@ -29,15 +29,15 @@ export default function SlotPicker({
 
       <div className="mt-6 border-t border-hairline pt-6 md:mt-0 md:border-l md:border-t-0 md:pl-6 md:pt-0">
         <div className="mb-3">
-          <div className="text-[11px] uppercase tracking-widest text-muted">Available times</div>
+          <div className="text-[11px] uppercase tracking-widest text-muted">{t('slots.title')}</div>
           <div className="font-semibold tabular-nums">{formatLong(date, lang)}</div>
         </div>
 
         {open.length === 0 ? (
           <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-sm text-muted">
-            No open times on this day.
+            {t('slots.empty1')}
             <br />
-            Try another date.
+            {t('slots.empty2')}
           </p>
         ) : (
           <div className="flex max-h-[19.5rem] flex-col gap-2 overflow-y-auto pr-1">
@@ -52,19 +52,26 @@ export default function SlotPicker({
                     active ? 'border-brand-to bg-panel-2' : 'border-hairline hover:border-brand-to'
                   }`}
                 >
-                  <span aria-hidden className={`absolute inset-y-0 left-0 w-1 ${active ? 'speed-stripe' : ''}`} />
+                  <span
+                    aria-hidden
+                    className={`absolute inset-y-0 left-0 w-1 ${active ? 'speed-stripe' : ''}`}
+                  />
                   <span className="pl-1">
-                    <span className="block text-lg font-semibold leading-none tabular-nums">{s.startTime}</span>
+                    <span className="block text-lg font-semibold leading-none tabular-nums">
+                      {s.startTime}
+                    </span>
                     <span className="mt-1 block text-xs text-muted">
-                      {formatVnd(s.price)} · {s.durationMinutes}m
+                      {formatVnd(s.price)} · {tf('duration', { minutes: s.durationMinutes })}
                     </span>
                   </span>
                   <span
                     className={`text-xs font-medium ${
-                      active ? 'text-brand-from' : 'text-muted opacity-0 transition group-hover:opacity-100'
+                      active
+                        ? 'text-brand-from'
+                        : 'text-muted opacity-0 transition group-hover:opacity-100'
                     }`}
                   >
-                    {active ? 'Selected' : 'Select'}
+                    {active ? t('slots.selected') : t('slots.select')}
                   </span>
                 </button>
               );
