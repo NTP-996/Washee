@@ -6,8 +6,11 @@ import BookingPage from './pages/BookingPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import DriverLoginPage from './pages/driver/DriverLoginPage';
+import DriverDashboardPage from './pages/driver/DriverDashboardPage';
 import RequireAuth from './components/RequireAuth';
 import RequireAdminRoute from './components/admin/RequireAdminRoute';
+import RequireDriverRoute from './components/driver/RequireDriverRoute';
 
 export default function App() {
   return (
@@ -39,6 +42,16 @@ export default function App() {
           <RequireAdminRoute>
             <AdminDashboardPage />
           </RequireAdminRoute>
+        }
+      />
+      <Route path="/driver" element={<Navigate to="/driver/dashboard" replace />} />
+      <Route path="/driver/login" element={<DriverLoginPage />} />
+      <Route
+        path="/driver/dashboard"
+        element={
+          <RequireDriverRoute>
+            <DriverDashboardPage />
+          </RequireDriverRoute>
         }
       />
       <Route path="*" element={<LandingPage />} />

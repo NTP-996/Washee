@@ -84,7 +84,7 @@ export default function BookingPage() {
     setSuccess('');
     setBusy(true);
     try {
-      await api('/api/bookings', {
+      const booked = await api<Booking>('/api/bookings', {
         method: 'POST',
         body: {
           slotId: selectedSlot.id,
@@ -92,7 +92,9 @@ export default function BookingPage() {
           couponId: applying ? coupon.id : undefined,
         },
       });
-      setSuccess(`Booked ${formatLong(selectedSlot.date, lang)} at ${selectedSlot.startTime}. See you there.`);
+      setSuccess(
+        `Booked ${formatLong(selectedSlot.date, lang)} at ${selectedSlot.startTime} — ${booked.driverName} will come to your car.`,
+      );
       setSelectedSlot(null);
       await Promise.all([loadSlots(date), loadBookings(), loadCoupons()]);
     } catch (err) {
@@ -103,7 +105,12 @@ export default function BookingPage() {
   }
 
   async function cancel(id: string): Promise<void> {
-    await api(`/api/bookings/${id}/cancel`, { method: 'PATCH' }).catch(() => undefined);
+    setError('');
+    try {
+      await api(`/api/bookings/${id}/cancel`, { method: 'PATCH' });
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : 'Could not cancel that booking');
+    }
     await Promise.all([loadBookings(), loadSlots(date), loadCoupons()]);
   }
 
@@ -118,8 +125,12 @@ export default function BookingPage() {
       <div className="mx-auto max-w-4xl px-5 py-8 sm:py-10">
         <div className="mb-6">
           <div className="speed-stripe mb-3 h-1 w-12 rounded-full" />
-          <h1 className="text-2xl font-extrabold uppercase tracking-tight sm:text-3xl">Book a wash</h1>
-          <p className="mt-1.5 text-sm text-muted">Pick a day and time — a vetted pro comes to your car.</p>
+          <h1 className="text-2xl font-extrabold uppercase tracking-tight sm:text-3xl">
+            Book a wash
+          </h1>
+          <p className="mt-1.5 text-sm text-muted">
+            Pick a day and time — a vetted pro comes to your car.
+          </p>
         </div>
 
         {locations.length === 0 && (

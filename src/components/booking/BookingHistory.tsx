@@ -25,6 +25,7 @@ export default function BookingHistory({
             </div>
             <div className="text-xs text-muted">
               {formatVnd(b.price)} · <span className="uppercase">{b.status}</span>
+              {b.driverName && <> · Washer: {b.driverName}</>}
             </div>
           </div>
           {(b.status === 'confirmed' || b.status === 'pending') && (

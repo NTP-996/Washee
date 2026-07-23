@@ -21,6 +21,7 @@ interface RequestOptions {
   body?: unknown;
   auth?: boolean; // attach the user bearer (default true)
   admin?: boolean; // attach the admin bearer instead of the user one
+  driver?: boolean; // attach the driver bearer instead of the user one
   retry?: boolean; // internal: allow one user 401 -> refresh retry (default true)
 }
 
@@ -28,6 +29,8 @@ function send(path: string, opts: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (opts.admin) {
     if (tokenStore.adminAccess) headers.Authorization = `Bearer ${tokenStore.adminAccess}`;
+  } else if (opts.driver) {
+    if (tokenStore.driverAccess) headers.Authorization = `Bearer ${tokenStore.driverAccess}`;
   } else if (opts.auth !== false && tokenStore.access) {
     headers.Authorization = `Bearer ${tokenStore.access}`;
   }
@@ -56,14 +59,32 @@ async function refreshTokens(): Promise<boolean> {
 }
 
 // api performs a typed JSON request. User requests transparently refresh once on
-// a 401; admin requests drop the (access-only) admin token on a 401.
+// a 401; admin/driver requests drop their (access-only) token on a 401.
 export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   let res = await send(path, opts);
 
-  if (res.status === 401 && !opts.admin && opts.auth !== false && opts.retry !== false && tokenStore.refresh) {
+  if (
+    res.status === 401 &&
+    !opts.admin &&
+    !opts.driver &&
+    opts.auth !== false &&
+    opts.retry !== false &&
+    tokenStore.refresh
+  ) {
     if (await refreshTokens()) res = await send(path, { ...opts, retry: false });
   }
-  if (res.status === 401 && opts.admin) tokenStore.clearAdmin();
+  // Admin/driver tokens are access-only: on expiry, drop the token and send the
+  // operator back to their login page instead of leaving a dead dashboard.
+  if (res.status === 401 && opts.admin) {
+    tokenStore.clearAdmin();
+    if (!window.location.pathname.startsWith('/admin/login'))
+      window.location.assign('/admin/login');
+  }
+  if (res.status === 401 && opts.driver) {
+    tokenStore.clearDriver();
+    if (!window.location.pathname.startsWith('/driver/login'))
+      window.location.assign('/driver/login');
+  }
 
   if (res.status === 204) return undefined as T;
 

@@ -61,6 +61,7 @@ export default function LiveBookingFeed({ onComplete }: { onComplete?: () => voi
               <div className="flex items-center justify-between">
                 <span className="font-semibold">
                   {b.date} · {b.startTime}
+                  <span className="font-normal text-muted"> · {b.driverName}</span>
                 </span>
                 <div className="flex items-center gap-3">
                   <span className="uppercase text-muted">{b.status}</span>

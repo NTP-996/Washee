@@ -34,6 +34,8 @@ export interface CalendarSlot {
   durationMinutes: number;
   price: number;
   status: 'available' | 'booked' | 'blocked';
+  driverId?: string; // admin schedule view only
+  driverName?: string; // admin schedule view only
 }
 
 export interface Coupon {
@@ -65,6 +67,8 @@ export interface Booking {
   price: number;
   carLocationId: string;
   phoneNumber: string;
+  driverName: string; // revealed after booking
+  couponId?: string | null;
   createdAt: string;
 }
 
@@ -76,9 +80,62 @@ export interface AdminFeedItem {
   date: string;
   startTime: string;
   price: number;
+  driverName: string;
   locationLabel: string;
   locationAddress: string;
   createdAt: string;
+}
+
+// ---- driver portal (the driver meta: drivers own their schedules) ----
+
+export interface DriverAuthResult {
+  accessToken: string;
+  username: string;
+  fullName: string;
+}
+
+export interface DriverJob {
+  id: string;
+  status: string;
+  date: string;
+  startTime: string;
+  durationMinutes: number;
+  price: number;
+  phoneNumber: string;
+  locationLabel: string;
+  locationAddress: string;
+  createdAt: string;
+}
+
+export interface AdminDriver {
+  id: string;
+  username: string;
+  fullName: string;
+  phone: string;
+  status: 'active' | 'inactive';
+  openSlots: number;
+  bookedSlots: number;
+  createdAt: string;
+}
+
+export interface AdminCustomer {
+  id: string;
+  email: string;
+  phone: string;
+  referralCode: string;
+  bookingsCount: number;
+  activeBookings: number;
+  createdAt: string;
+  deletedAt: string | null;
+}
+
+export interface AdminSettings {
+  standardPriceVnd: number;
+}
+
+export interface AdminSettingsUpdateResult {
+  standardPriceVnd: number;
+  repricedSlots: number;
 }
 
 export interface AdminCoupon {
