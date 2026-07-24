@@ -16,6 +16,9 @@ interface AuthState {
   user: User | null;
   signup: (input: SignupInput) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  // Adopt a session obtained out-of-band (OAuth / passkey), storing tokens and
+  // applying the account's language exactly like a password login.
+  adopt: (res: AuthResult) => void;
   logout: () => Promise<void>;
 }
 
@@ -46,6 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: { email, password },
           auth: false,
         });
+        tokenStore.set(res);
+        setUser(res.user);
+        if (res.user.preferredLang) setLang(res.user.preferredLang);
+      },
+      adopt(res) {
         tokenStore.set(res);
         setUser(res.user);
         if (res.user.preferredLang) setLang(res.user.preferredLang);

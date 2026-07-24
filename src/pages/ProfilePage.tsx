@@ -7,6 +7,7 @@ import type { User } from '../types';
 import ProfileCard from '../components/profile/ProfileCard';
 import CarLocationList from '../components/profile/CarLocationList';
 import ReferralCard from '../components/profile/ReferralCard';
+import PasskeysCard from '../components/profile/PasskeysCard';
 import AppHeader, { headerPill } from '../components/AppHeader';
 
 export default function ProfilePage() {
@@ -64,6 +65,7 @@ export default function ProfilePage() {
             </h2>
             <LangToggle onSelect={saveLang} />
           </section>
+          <PasskeysCard />
           <CarLocationList />
           <ReferralCard />
         </div>

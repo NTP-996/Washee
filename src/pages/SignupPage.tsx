@@ -5,6 +5,7 @@ import { useI18n } from '../lib/i18n';
 import { ApiRequestError } from '../lib/api';
 import { Button, Field, TextInput } from '../components/ui';
 import AuthShell from '../components/AuthShell';
+import SignInOptions from '../components/auth/SignInOptions';
 
 export default function SignupPage() {
   const { signup } = useAuth();
@@ -84,6 +85,10 @@ export default function SignupPage() {
           {busy ? '…' : t('auth.signup.submit')}
         </Button>
       </form>
+      <SignInOptions
+        onDone={() => nav('/profile', { replace: true })}
+        referralCode={referralCode || undefined}
+      />
       <p className="mt-6 text-center text-sm text-muted">
         <Link to="/login" className="text-brand-from hover:underline">
           {t('auth.toLogin')}

@@ -5,6 +5,7 @@ import { useI18n } from '../lib/i18n';
 import { ApiRequestError } from '../lib/api';
 import { Button, Field, TextInput } from '../components/ui';
 import AuthShell from '../components/AuthShell';
+import SignInOptions from '../components/auth/SignInOptions';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -56,6 +57,9 @@ export default function LoginPage() {
           {busy ? '…' : t('auth.login.submit')}
         </Button>
       </form>
+      <SignInOptions
+        onDone={() => nav(loc.state?.from?.pathname ?? '/profile', { replace: true })}
+      />
       <p className="mt-6 text-center text-sm text-muted">
         <Link to="/signup" className="text-brand-from hover:underline">
           {t('auth.toSignup')}
