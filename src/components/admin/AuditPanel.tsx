@@ -1,12 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { api } from '../../lib/api';
+import { PAGE_LIMIT, useAdminPagedList } from '../../lib/useAdminPagedList';
 import type { AuditLogRow } from '../../types';
 import { TextInput } from '../ui';
-
-const pillButton =
-  'rounded-full border border-hairline px-2.5 py-1 text-xs text-muted transition hover:border-brand-to hover:text-ink';
-const pillButtonActive =
-  'rounded-full border border-brand-to px-2.5 py-1 text-xs text-ink transition';
+import { DateRangeFilter, LoadMoreButton, pillButton, pillButtonActive } from './listControls';
 
 type ActorFilter = '' | 'admin' | 'driver';
 
@@ -17,39 +14,45 @@ const actorFilters: { value: ActorFilter; label: string }[] = [
 ];
 
 // Read-only trail of privileged actions (admin logins, driver/slot mutations,
-// …), newest first. Filterable by actor type and action prefix.
+// …), newest first. Filterable by actor type, action prefix, and date range.
 export default function AuditPanel() {
-  const [rows, setRows] = useState<AuditLogRow[]>([]);
   const [actorType, setActorType] = useState<ActorFilter>('');
   const [actionPrefix, setActionPrefix] = useState('');
-  const [error, setError] = useState('');
+  const [appliedPrefix, setAppliedPrefix] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [appliedFrom, setAppliedFrom] = useState('');
+  const [appliedTo, setAppliedTo] = useState('');
 
-  async function load(actor: ActorFilter, prefix: string): Promise<void> {
-    setError('');
-    try {
-      const params = new URLSearchParams();
-      if (actor) params.set('actorType', actor);
-      if (prefix.trim()) params.set('actionPrefix', prefix.trim());
-      const qs = params.toString();
-      setRows(
-        await api<AuditLogRow[]>(`/api/admin/audit-logs${qs ? `?${qs}` : ''}`, { admin: true }),
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit trail');
-    }
-  }
-  useEffect(() => {
-    void load('', '');
-  }, []);
+  const fetchPage = useCallback(
+    (before: string) => {
+      const params = new URLSearchParams({ limit: String(PAGE_LIMIT + 1) });
+      if (actorType) params.set('actorType', actorType);
+      if (appliedPrefix.trim()) params.set('actionPrefix', appliedPrefix.trim());
+      if (appliedFrom) params.set('from', appliedFrom);
+      if (appliedTo) params.set('to', appliedTo);
+      if (before) params.set('before', before);
+      return api<AuditLogRow[]>(`/api/admin/audit-logs?${params}`, { admin: true });
+    },
+    [actorType, appliedPrefix, appliedFrom, appliedTo],
+  );
+  const {
+    items: rows,
+    hasMore,
+    loadingMore,
+    error,
+    loadMore,
+  } = useAdminPagedList(fetchPage, (r) => r.occurredAt);
 
   function pickActor(actor: ActorFilter): void {
     setActorType(actor);
-    void load(actor, actionPrefix);
   }
 
   function apply(e: FormEvent): void {
     e.preventDefault();
-    void load(actorType, actionPrefix);
+    setAppliedPrefix(actionPrefix);
+    setAppliedFrom(from);
+    setAppliedTo(to);
   }
 
   return (
@@ -76,6 +79,7 @@ export default function AuditPanel() {
           aria-label="Filter by action prefix"
           className="min-w-40 flex-1 px-3! py-2! text-sm"
         />
+        <DateRangeFilter from={from} to={to} onFromChange={setFrom} onToChange={setTo} />
         <button type="submit" className={`${pillButton} shrink-0 px-4 py-2`}>
           Apply
         </button>
@@ -122,6 +126,8 @@ export default function AuditPanel() {
           })}
         </ul>
       )}
+
+      <LoadMoreButton hasMore={hasMore} loadingMore={loadingMore} onClick={() => void loadMore()} />
     </section>
   );
 }

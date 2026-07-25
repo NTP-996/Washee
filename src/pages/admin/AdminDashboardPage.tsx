@@ -7,14 +7,18 @@ import LiveBookingFeed from '../../components/admin/LiveBookingFeed';
 import CouponTracker from '../../components/admin/CouponTracker';
 import DriversPanel from '../../components/admin/DriversPanel';
 import CustomersPanel from '../../components/admin/CustomersPanel';
+import PackagesPanel from '../../components/admin/PackagesPanel';
 import SettingsCard from '../../components/admin/SettingsCard';
 import AuditPanel from '../../components/admin/AuditPanel';
+import ReviewsPanel from '../../components/admin/ReviewsPanel';
 
 const sections = [
   { id: 'schedule', label: 'Schedule' },
   { id: 'bookings', label: 'Bookings' },
   { id: 'drivers', label: 'Drivers' },
+  { id: 'packages', label: 'Packages' },
   { id: 'customers', label: 'Customers' },
+  { id: 'reviews', label: 'Reviews' },
   { id: 'audit', label: 'Audit' },
   { id: 'settings', label: 'Settings' },
 ];
@@ -81,8 +85,16 @@ export default function AdminDashboardPage() {
           <SettingsCard />
         </section>
 
+        <section id="packages" className="scroll-mt-20">
+          <PackagesPanel />
+        </section>
+
         <section id="customers" className="scroll-mt-20">
           <CustomersPanel />
+        </section>
+
+        <section id="reviews" className="scroll-mt-20">
+          <ReviewsPanel />
         </section>
 
         <section id="audit" className="scroll-mt-20">

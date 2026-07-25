@@ -1,16 +1,17 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, ApiRequestError } from '../../lib/api';
-import type { AdminDriver } from '../../types';
-import { Button, Field, TextInput } from '../ui';
+import { PAGE_LIMIT, useAdminPagedList } from '../../lib/useAdminPagedList';
+import type { AdminDriver, WashPackage } from '../../types';
+import { Button, Field, StarRating, TextInput } from '../ui';
+import { LoadMoreButton, pillButton } from './listControls';
 
-const pillButton =
-  'rounded-full border border-hairline px-2.5 py-1 text-xs text-muted transition hover:border-brand-to hover:text-ink';
-
-// Driver roster + CRUD: create, edit name/phone, reset password, toggle
-// active/inactive, delete (blocked while the driver still owns slots).
+// Driver roster + CRUD: search by username/name/phone, create, edit name/phone,
+// reset password, toggle active/inactive, delete (blocked while the driver
+// still owns slots).
 export default function DriversPanel() {
-  const [drivers, setDrivers] = useState<AdminDriver[]>([]);
-  const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
+  const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -19,21 +20,42 @@ export default function DriversPanel() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editPackageIds, setEditPackageIds] = useState<Set<string>>(new Set());
+  const [packages, setPackages] = useState<WashPackage[]>([]);
 
-  async function load(): Promise<void> {
-    try {
-      setDrivers(await api<AdminDriver[]>('/api/admin/drivers', { admin: true }));
-    } catch {
-      /* ignore */
-    }
-  }
   useEffect(() => {
-    void load();
+    api<WashPackage[]>('/api/admin/packages?limit=200', { admin: true })
+      .then(setPackages)
+      .catch(() => setActionError('Failed to load packages'));
   }, []);
+
+  const fetchPage = useCallback(
+    (before: string) => {
+      const params = new URLSearchParams({ limit: String(PAGE_LIMIT + 1) });
+      if (appliedQuery.trim()) params.set('q', appliedQuery.trim());
+      if (before) params.set('before', before);
+      return api<AdminDriver[]>(`/api/admin/drivers?${params}`, { admin: true });
+    },
+    [appliedQuery],
+  );
+  const {
+    items: drivers,
+    setItems: setDrivers,
+    hasMore,
+    loadingMore,
+    error,
+    reload,
+    loadMore,
+  } = useAdminPagedList(fetchPage, (d) => d.createdAt);
+
+  function search(e: FormEvent): void {
+    e.preventDefault();
+    setAppliedQuery(query);
+  }
 
   async function create(e: FormEvent): Promise<void> {
     e.preventDefault();
-    setError('');
+    setActionError('');
     setBusy(true);
     try {
       await api('/api/admin/drivers', {
@@ -45,12 +67,12 @@ export default function DriversPanel() {
       setPassword('');
       setFullName('');
       setPhone('');
-      await load();
+      await reload();
     } catch (err) {
       if (err instanceof ApiRequestError && err.code === 'username_taken') {
-        setError('That username is already taken.');
+        setActionError('That username is already taken.');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to create driver');
+        setActionError(err instanceof Error ? err.message : 'Failed to create driver');
       }
     } finally {
       setBusy(false);
@@ -58,13 +80,17 @@ export default function DriversPanel() {
   }
 
   async function patch(id: string, body: Record<string, unknown>): Promise<boolean> {
-    setError('');
+    setActionError('');
     try {
-      await api(`/api/admin/drivers/${id}`, { admin: true, method: 'PATCH', body });
-      await load();
+      const updated = await api<AdminDriver>(`/api/admin/drivers/${id}`, {
+        admin: true,
+        method: 'PATCH',
+        body,
+      });
+      setDrivers((prev) => prev.map((d) => (d.id === id ? updated : d)));
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Update failed');
+      setActionError(err instanceof Error ? err.message : 'Update failed');
       return false;
     }
   }
@@ -77,11 +103,34 @@ export default function DriversPanel() {
     setEditId(d.id);
     setEditName(d.fullName);
     setEditPhone(d.phone);
+    setEditPackageIds(new Set(d.packageIds));
   }
 
   async function saveEdit(id: string): Promise<void> {
     // Keep the edit row open (input intact) when the PATCH fails.
-    if (await patch(id, { fullName: editName, phone: editPhone })) setEditId(null);
+    if (!(await patch(id, { fullName: editName, phone: editPhone }))) return;
+    try {
+      await api(`/api/admin/drivers/${id}/packages`, {
+        admin: true,
+        method: 'PUT',
+        body: { packageIds: Array.from(editPackageIds) },
+      });
+      setDrivers((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, packageIds: Array.from(editPackageIds) } : d)),
+      );
+      setEditId(null);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to update package tags');
+    }
+  }
+
+  function togglePackage(packageId: string): void {
+    setEditPackageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(packageId)) next.delete(packageId);
+      else next.add(packageId);
+      return next;
+    });
   }
 
   function resetPassword(id: string): void {
@@ -91,15 +140,15 @@ export default function DriversPanel() {
 
   async function remove(id: string): Promise<void> {
     if (!window.confirm('Delete this driver?')) return;
-    setError('');
+    setActionError('');
     try {
       await api(`/api/admin/drivers/${id}`, { admin: true, method: 'DELETE' });
-      await load();
+      await reload();
     } catch (err) {
       if (err instanceof ApiRequestError && err.status === 409) {
-        setError('Driver still owns schedule slots — deactivate instead.');
+        setActionError('Driver still owns schedule slots — deactivate instead.');
       } else {
-        setError(err instanceof Error ? err.message : 'Delete failed');
+        setActionError(err instanceof Error ? err.message : 'Delete failed');
       }
     }
   }
@@ -107,10 +156,25 @@ export default function DriversPanel() {
   return (
     <section className="rounded-2xl border border-hairline bg-panel p-6">
       <h2 className="mb-4 text-xs uppercase tracking-widest text-muted">Drivers</h2>
-      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+
+      <form onSubmit={search} className="mb-4 flex items-center gap-2">
+        <TextInput
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search username, name, or phone"
+          aria-label="Search drivers"
+        />
+        <button type="submit" className={`${pillButton} shrink-0 px-4 py-2`}>
+          Search
+        </button>
+      </form>
+
+      {(error || actionError) && (
+        <p className="mb-3 text-sm text-red-400">{error || actionError}</p>
+      )}
 
       {drivers.length === 0 ? (
-        <p className="text-sm text-muted">No drivers yet.</p>
+        <p className="text-sm text-muted">No drivers found.</p>
       ) : (
         <ul className="space-y-2">
           {drivers.map((d) => (
@@ -133,11 +197,30 @@ export default function DriversPanel() {
                   {d.status}
                 </span>
               </div>
-              <div className="mt-1 text-xs text-muted">
-                {d.phone} ·{' '}
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                <span>{d.phone}</span>
                 <span className="tabular-nums">
-                  {d.openSlots} open · {d.bookedSlots} booked
+                  · {d.openSlots} open · {d.bookedSlots} booked
                 </span>
+                {d.reviewCount > 0 ? (
+                  <span className="flex items-center gap-1.5">
+                    · <StarRating value={Math.round(d.avgWashRating)} size="sm" />
+                    <span className="tabular-nums">
+                      {d.avgWashRating.toFixed(1)} ({d.reviewCount})
+                    </span>
+                  </span>
+                ) : (
+                  <span>· No reviews yet</span>
+                )}
+              </div>
+              <div className="mt-1 text-xs text-muted">
+                ·{' '}
+                {d.packageIds.length === 0
+                  ? 'No packages assigned'
+                  : packages
+                      .filter((pkg) => d.packageIds.includes(pkg.id))
+                      .map((pkg) => pkg.title)
+                      .join(', ') || `${d.packageIds.length} package(s)`}
               </div>
 
               {editId === d.id && (
@@ -154,6 +237,26 @@ export default function DriversPanel() {
                     placeholder="Phone"
                     aria-label="Phone"
                   />
+                  <div className="sm:col-span-2">
+                    <span className="mb-1.5 block text-sm text-muted">Eligible packages</span>
+                    {packages.length === 0 ? (
+                      <p className="text-xs text-muted">No packages exist yet.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                        {packages.map((pkg) => (
+                          <label key={pkg.id} className="flex items-center gap-1.5 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={editPackageIds.has(pkg.id)}
+                              onChange={() => togglePackage(pkg.id)}
+                              className="h-4 w-4 accent-brand-to"
+                            />
+                            {pkg.title}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-2 sm:col-span-2">
                     <button onClick={() => void saveEdit(d.id)} className={pillButton}>
                       Save
@@ -191,6 +294,8 @@ export default function DriversPanel() {
           ))}
         </ul>
       )}
+
+      <LoadMoreButton hasMore={hasMore} loadingMore={loadingMore} onClick={() => void loadMore()} />
 
       <form onSubmit={create} className="mt-6 border-t border-hairline pt-5">
         <h3 className="mb-3 text-xs uppercase tracking-widest text-muted">Add driver</h3>

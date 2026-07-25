@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { api, ApiRequestError } from '../../lib/api';
-import { formatVnd } from '../../lib/format';
 import { addDaysISO, formatLong, todayISO } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import type { CalendarSlot } from '../../types';
@@ -20,9 +19,12 @@ export default function ScheduleOverview() {
   async function load(): Promise<void> {
     try {
       setSlots(
-        await api<CalendarSlot[]>(`/api/admin/calendar-slots?from=${todayISO()}&to=${addDaysISO(todayISO(), 180)}`, {
-          admin: true,
-        }),
+        await api<CalendarSlot[]>(
+          `/api/admin/calendar-slots?from=${todayISO()}&to=${addDaysISO(todayISO(), 180)}`,
+          {
+            admin: true,
+          },
+        ),
       );
     } catch {
       /* ignore */
@@ -71,12 +73,12 @@ export default function ScheduleOverview() {
           ) : (
             <ul className="flex max-h-[16rem] flex-col gap-2 overflow-y-auto pr-1">
               {daySlots.map((s) => (
-                <li key={s.id} className="rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm">
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm"
+                >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="tabular-nums">
-                      <span className="font-semibold">{s.startTime}</span>
-                      <span className="text-muted"> · {formatVnd(s.price)}</span>
-                    </span>
+                    <span className="font-semibold tabular-nums">{s.startTime}</span>
                     <span className="flex items-center gap-2">
                       <span
                         className={`text-[10px] uppercase tracking-wide ${

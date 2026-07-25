@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { api, ApiRequestError } from '../../lib/api';
+import { PAGE_LIMIT, useAdminPagedList } from '../../lib/useAdminPagedList';
 import type { AdminCustomer } from '../../types';
 import { Button, Field, TextInput } from '../ui';
 
@@ -10,9 +11,8 @@ const pillButton =
 // delete (blocked while the customer still has bookings; soft-deleted rows
 // stay listed for audit but lose their actions).
 export default function CustomersPanel() {
-  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [query, setQuery] = useState('');
-  const [error, setError] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -20,27 +20,35 @@ export default function CustomersPanel() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [actionError, setActionError] = useState('');
 
-  async function load(q: string): Promise<void> {
-    try {
-      const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
-      setCustomers(await api<AdminCustomer[]>(`/api/admin/customers${qs}`, { admin: true }));
-    } catch {
-      /* ignore */
-    }
-  }
-  useEffect(() => {
-    void load('');
-  }, []);
+  const fetchPage = useCallback(
+    (before: string) => {
+      const params = new URLSearchParams({ limit: String(PAGE_LIMIT + 1) });
+      if (appliedQuery.trim()) params.set('q', appliedQuery.trim());
+      if (before) params.set('before', before);
+      return api<AdminCustomer[]>(`/api/admin/customers?${params}`, { admin: true });
+    },
+    [appliedQuery],
+  );
+  const {
+    items: customers,
+    setItems: setCustomers,
+    hasMore,
+    loadingMore,
+    error,
+    reload,
+    loadMore,
+  } = useAdminPagedList(fetchPage, (c) => c.createdAt);
 
   function search(e: FormEvent): void {
     e.preventDefault();
-    void load(query);
+    setAppliedQuery(query);
   }
 
   async function create(e: FormEvent): Promise<void> {
     e.preventDefault();
-    setError('');
+    setActionError('');
     setBusy(true);
     try {
       await api('/api/admin/customers', {
@@ -51,12 +59,12 @@ export default function CustomersPanel() {
       setEmail('');
       setPhone('');
       setPassword('');
-      await load(query);
+      await reload();
     } catch (err) {
       if (err instanceof ApiRequestError && err.code === 'email_taken') {
-        setError('That email is already registered.');
+        setActionError('That email is already registered.');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to create customer');
+        setActionError(err instanceof Error ? err.message : 'Failed to create customer');
       }
     } finally {
       setBusy(false);
@@ -74,31 +82,31 @@ export default function CustomersPanel() {
   }
 
   async function saveEdit(id: string): Promise<void> {
-    setError('');
+    setActionError('');
     try {
-      await api(`/api/admin/customers/${id}`, {
+      const updated = await api<AdminCustomer>(`/api/admin/customers/${id}`, {
         admin: true,
         method: 'PATCH',
         body: { email: editEmail, phone: editPhone },
       });
       setEditId(null);
-      await load(query);
+      setCustomers((prev) => prev.map((c) => (c.id === id ? updated : c)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Update failed');
+      setActionError(err instanceof Error ? err.message : 'Update failed');
     }
   }
 
   async function remove(id: string): Promise<void> {
     if (!window.confirm('Delete this customer?')) return;
-    setError('');
+    setActionError('');
     try {
       await api(`/api/admin/customers/${id}`, { admin: true, method: 'DELETE' });
-      await load(query);
+      await reload();
     } catch (err) {
       if (err instanceof ApiRequestError && err.code === 'customer_has_bookings') {
-        setError('Customer still has bookings — cannot delete.');
+        setActionError('Customer still has bookings — cannot delete.');
       } else {
-        setError(err instanceof Error ? err.message : 'Delete failed');
+        setActionError(err instanceof Error ? err.message : 'Delete failed');
       }
     }
   }
@@ -119,7 +127,9 @@ export default function CustomersPanel() {
         </button>
       </form>
 
-      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
+      {(error || actionError) && (
+        <p className="mb-3 text-sm text-red-400">{error || actionError}</p>
+      )}
 
       {customers.length === 0 ? (
         <p className="text-sm text-muted">No customers found.</p>
@@ -188,6 +198,16 @@ export default function CustomersPanel() {
             </li>
           ))}
         </ul>
+      )}
+
+      {hasMore && (
+        <button
+          onClick={() => void loadMore()}
+          disabled={loadingMore}
+          className={`${pillButton} mt-3`}
+        >
+          {loadingMore ? '…' : 'Load more'}
+        </button>
       )}
 
       <form onSubmit={create} className="mt-6 border-t border-hairline pt-5">

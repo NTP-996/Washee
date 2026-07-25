@@ -33,10 +33,37 @@ export interface CalendarSlot {
   date: string; // ISO date
   startTime: string; // HH:mm
   durationMinutes: number;
-  price: number;
   status: 'available' | 'booked' | 'blocked';
   driverId?: string; // admin schedule view only
   driverName?: string; // admin schedule view only
+}
+
+// ---- wash packages / car types ----
+
+export interface CarType {
+  id: string;
+  key: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface PackagePrice {
+  carTypeId: string;
+  carTypeKey: string;
+  carTypeName: string;
+  priceVnd: number;
+}
+
+export interface WashPackage {
+  id: string;
+  title: string;
+  description: string;
+  status: 'active' | 'inactive';
+  sortOrder: number;
+  prices: PackagePrice[];
+  eligibleDriverCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Coupon {
@@ -49,7 +76,22 @@ export interface Coupon {
 export interface BookingRequest {
   slotId: string;
   carLocationId: string;
+  phone: string;
+  packageId: string;
+  carTypeId: string;
   couponId?: string;
+}
+
+export interface ReviewSummary {
+  washRating: number;
+  driverRating: number;
+  comment: string;
+}
+
+export interface ReviewRequest {
+  washRating: number;
+  driverRating: number;
+  comment?: string;
 }
 
 export interface ReferralSummary {
@@ -58,9 +100,25 @@ export interface ReferralSummary {
   coupons: Coupon[];
 }
 
+// The assigned driver's aggregate rating, visible on every one of the
+// customer's own bookings (never a general driver directory — dispatch is
+// automatic, so there's nothing to browse).
+export interface DriverRating {
+  washAvg: number;
+  driverAvg: number;
+  count: number;
+}
+
 export interface Booking {
   id: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'in_progress'
+    | 'awaiting_payment'
+    | 'declined'
+    | 'cancelled'
+    | 'completed';
   slotId: string;
   date: string;
   startTime: string;
@@ -68,8 +126,26 @@ export interface Booking {
   price: number;
   carLocationId: string;
   phoneNumber: string;
+  driverId: string;
   driverName: string; // revealed after booking
+  driverRating: DriverRating;
+  packageId: string;
+  packageTitle: string;
+  carTypeId: string;
+  carTypeName: string;
   couponId?: string | null;
+  declineReason?: string | null; // set only when status is "declined"
+  startedAt?: string | null; // set once the driver starts the job
+  finishedAt?: string | null; // set once the driver finishes, awaiting payment
+  review: ReviewSummary | null;
+  createdAt: string;
+}
+
+// One message in a booking's chat thread (customer <-> assigned driver).
+export interface ChatMessage {
+  id: string;
+  senderRole: 'customer' | 'driver';
+  body: string;
   createdAt: string;
 }
 
@@ -82,8 +158,11 @@ export interface AdminFeedItem {
   startTime: string;
   price: number;
   driverName: string;
+  packageTitle: string;
+  carTypeName: string;
   locationLabel: string;
   locationAddress: string;
+  declineReason?: string | null;
   createdAt: string;
 }
 
@@ -102,9 +181,14 @@ export interface DriverJob {
   startTime: string;
   durationMinutes: number;
   price: number;
+  packageTitle: string;
+  carTypeName: string;
   phoneNumber: string;
   locationLabel: string;
   locationAddress: string;
+  declineReason?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
   createdAt: string;
 }
 
@@ -116,6 +200,10 @@ export interface AdminDriver {
   status: 'active' | 'inactive';
   openSlots: number;
   bookedSlots: number;
+  avgWashRating: number;
+  avgDriverRating: number;
+  reviewCount: number;
+  packageIds: string[];
   createdAt: string;
 }
 
@@ -169,6 +257,18 @@ export interface CompleteBookingResult {
 // Standard error envelope: { error: { code, message, details? } }.
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };
+}
+
+// One row of the admin reviews list (GET /api/admin/reviews).
+export interface AdminReviewRow {
+  id: string;
+  bookingId: string;
+  driverName: string;
+  customerEmail: string;
+  washRating: number;
+  driverRating: number;
+  comment: string;
+  createdAt: string;
 }
 
 // One row of the admin audit trail (GET /api/admin/audit-logs).

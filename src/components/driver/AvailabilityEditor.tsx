@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiRequestError } from '../../lib/api';
-import { formatVnd } from '../../lib/format';
 import { addDaysISO, formatLong, todayISO } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import type { CalendarSlot } from '../../types';
@@ -10,8 +9,8 @@ import Calendar from '../booking/Calendar';
 // Driver availability editor, Calendly-style: a month calendar (days with slots
 // carry a dot) beside the chosen day's slots, with an inline add-time control.
 // Loads a 180-day window so the calendar can mark availability without a
-// per-month fetch. Drivers publish times only — every slot inherits the
-// admin-set standard price.
+// per-month fetch. Drivers publish times only — the price a customer pays
+// depends on the package + car type they pick at booking time, not the slot.
 export default function AvailabilityEditor() {
   const { lang } = useI18n();
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
@@ -103,7 +102,6 @@ export default function AvailabilityEditor() {
               +
             </button>
           </form>
-          <p className="mb-4 text-xs text-muted">Slots use the standard price set by the admin.</p>
           {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
 
           {daySlots.length === 0 ? (
@@ -115,10 +113,7 @@ export default function AvailabilityEditor() {
                   key={s.id}
                   className="flex items-center justify-between rounded-lg border border-hairline bg-panel-2 px-3 py-2 text-sm"
                 >
-                  <span className="tabular-nums">
-                    <span className="font-semibold">{s.startTime}</span>
-                    <span className="text-muted"> · {formatVnd(s.price)}</span>
-                  </span>
+                  <span className="font-semibold tabular-nums">{s.startTime}</span>
                   {s.status === 'booked' ? (
                     <span className="text-[10px] uppercase tracking-wide text-brand-from">
                       booked

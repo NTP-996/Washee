@@ -1,5 +1,4 @@
 import type { CalendarSlot } from '../../types';
-import { formatVnd } from '../../lib/format';
 import { formatLong } from '../../lib/date';
 import { useI18n } from '../../lib/i18n';
 import Calendar from './Calendar';
@@ -61,7 +60,7 @@ export default function SlotPicker({
                       {s.startTime}
                     </span>
                     <span className="mt-1 block text-xs text-muted">
-                      {formatVnd(s.price)} · {tf('duration', { minutes: s.durationMinutes })}
+                      {tf('duration', { minutes: s.durationMinutes })}
                     </span>
                   </span>
                   <span
