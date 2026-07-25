@@ -218,15 +218,6 @@ export interface AdminCustomer {
   deletedAt: string | null;
 }
 
-export interface AdminSettings {
-  standardPriceVnd: number;
-}
-
-export interface AdminSettingsUpdateResult {
-  standardPriceVnd: number;
-  repricedSlots: number;
-}
-
 export interface AdminCoupon {
   id: string;
   ownerUserId: string;

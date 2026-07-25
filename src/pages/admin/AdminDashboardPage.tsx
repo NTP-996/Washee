@@ -8,7 +8,6 @@ import CouponTracker from '../../components/admin/CouponTracker';
 import DriversPanel from '../../components/admin/DriversPanel';
 import CustomersPanel from '../../components/admin/CustomersPanel';
 import PackagesPanel from '../../components/admin/PackagesPanel';
-import SettingsCard from '../../components/admin/SettingsCard';
 import AuditPanel from '../../components/admin/AuditPanel';
 import ReviewsPanel from '../../components/admin/ReviewsPanel';
 
@@ -20,7 +19,6 @@ const sections = [
   { id: 'customers', label: 'Customers' },
   { id: 'reviews', label: 'Reviews' },
   { id: 'audit', label: 'Audit' },
-  { id: 'settings', label: 'Settings' },
 ];
 
 export default function AdminDashboardPage() {
@@ -77,12 +75,8 @@ export default function AdminDashboardPage() {
           <CouponTracker refreshKey={couponRefresh} />
         </section>
 
-        <section
-          id="drivers"
-          className="grid scroll-mt-20 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
-        >
+        <section id="drivers" className="scroll-mt-20">
           <DriversPanel />
-          <SettingsCard />
         </section>
 
         <section id="packages" className="scroll-mt-20">
