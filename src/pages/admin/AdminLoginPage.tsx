@@ -62,7 +62,11 @@ export default function AdminLoginPage() {
                 required
               />
             </Field>
-            {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-red-400">
+                {error}
+              </p>
+            )}
             <Button type="submit" disabled={busy} className="w-full">
               {busy ? '…' : 'Sign in'}
             </Button>

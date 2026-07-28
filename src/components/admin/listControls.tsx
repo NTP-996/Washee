@@ -45,7 +45,7 @@ export function DateRangeFilter({
         value={from}
         onChange={(e) => onFromChange(e.target.value)}
         aria-label="From date"
-        className="rounded-full border border-hairline bg-panel-2 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-brand-to"
+        className="rounded-full border border-hairline bg-panel-2 px-3 py-1.5 text-xs text-ink transition focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
       />
       <span className="text-xs text-muted">–</span>
       <input
@@ -53,7 +53,7 @@ export function DateRangeFilter({
         value={to}
         onChange={(e) => onToChange(e.target.value)}
         aria-label="To date"
-        className="rounded-full border border-hairline bg-panel-2 px-3 py-1.5 text-xs text-ink outline-none transition focus:border-brand-to"
+        className="rounded-full border border-hairline bg-panel-2 px-3 py-1.5 text-xs text-ink transition focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
       />
     </div>
   );

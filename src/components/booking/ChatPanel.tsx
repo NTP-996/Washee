@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, ApiRequestError } from '../../lib/api';
+import { useI18n } from '../../lib/i18n';
 import { useBookingLive, type BookingLiveMessage } from '../../lib/useBookingLive';
 
 // A booking's chat stays open through the whole active wash (pending through
@@ -23,6 +24,7 @@ export default function ChatPanel({
   role: 'customer' | 'driver';
   active: boolean;
 }) {
+  const { t } = useI18n();
   const [messages, setMessages] = useState<BookingLiveMessage[]>([]);
   const [body, setBody] = useState('');
   const [error, setError] = useState('');
@@ -41,9 +43,18 @@ export default function ChatPanel({
   }, [active]);
 
   useEffect(() => {
+    setMessages([]);
+    let ignore = false;
     api<BookingLiveMessage[]>(path, opts)
-      .then(setMessages)
-      .catch(() => setError('Failed to load messages'));
+      .then((history) => {
+        if (!ignore) setMessages(history);
+      })
+      .catch(() => {
+        if (!ignore) setError('Failed to load messages');
+      });
+    return () => {
+      ignore = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId]);
 
@@ -82,9 +93,22 @@ export default function ChatPanel({
     }
   }
 
+  // Screen-reader sender prefix — bubble alignment/tint alone doesn't convey
+  // who said what. Localized on the customer surface; the driver surface stays
+  // English like the rest of the driver dashboard.
+  function senderPrefix(senderRole: string): string {
+    if (senderRole === role) return role === 'customer' ? t('chat.you') : 'You: ';
+    return role === 'customer' ? t('chat.driver') : 'Customer: ';
+  }
+
   return (
     <div className="mt-3 space-y-2 border-t border-hairline pt-3">
-      <div className="max-h-48 space-y-1.5 overflow-y-auto">
+      <div
+        role="log"
+        aria-live="polite"
+        aria-label={role === 'customer' ? t('history.messages') : 'Messages'}
+        className="max-h-48 space-y-1.5 overflow-y-auto"
+      >
         {messages.length === 0 && <p className="text-xs text-muted">No messages yet.</p>}
         {messages.map((m) => (
           <div
@@ -95,19 +119,24 @@ export default function ChatPanel({
                 : 'border-hairline bg-panel text-ink'
             }`}
           >
+            <span className="sr-only">{senderPrefix(m.senderRole)}</span>
             {m.body}
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
       {liveActive ? (
         <form onSubmit={send} className="flex gap-2">
           <input
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Message…"
-            className="flex-1 rounded-xl border border-hairline bg-panel-2 px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-to"
+            className="flex-1 rounded-xl border border-hairline bg-panel-2 px-3 py-2 text-sm text-ink transition focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
           />
           <button
             type="submit"

@@ -86,8 +86,17 @@ export default function PasskeysCard() {
               ))}
             </ul>
           )}
-          {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
-          {note && <p className="mb-3 text-sm text-brand-from">{note}</p>}
+          {error && (
+            <p role="alert" className="mb-3 text-sm text-red-400">
+              {error}
+            </p>
+          )}
+          {/* Success note lives in a persistently mounted polite region — a
+              freshly mounted role="status" node announces inconsistently, but
+              a text change inside an existing region is reliable. */}
+          <div aria-live="polite" role="status">
+            {note && <p className="mb-3 text-sm text-brand-from">{note}</p>}
+          </div>
           <button
             onClick={add}
             disabled={busy}

@@ -234,7 +234,7 @@ export default function CarLocationList() {
                 onChange={(e) =>
                   setForm({ ...form, shortcut: e.target.value as LocationShortcut | '' })
                 }
-                className="w-full rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-ink outline-none focus:border-brand-to"
+                className="w-full rounded-xl border border-hairline bg-panel-2 px-4 py-3 text-ink focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
               >
                 <option value="">{t('loc.none')}</option>
                 {SHORTCUTS.map((s) => (
@@ -246,7 +246,11 @@ export default function CarLocationList() {
             </Field>
           )}
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <p role="alert" className="text-sm text-red-400">
+              {error}
+            </p>
+          )}
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>
               {busy ? '…' : form.id ? t('common.save') : t('loc.addBtn')}

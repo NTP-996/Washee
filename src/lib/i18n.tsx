@@ -50,8 +50,15 @@ const DICT = {
     'slots.title': 'Available times',
     'slots.empty1': 'No open times on this day.',
     'slots.empty2': 'Try another date.',
+    'slots.loading': 'Loading times…',
+    'slots.error': 'Could not load times.',
+    'slots.retry': 'Retry',
     'slots.select': 'Select',
     'slots.selected': 'Selected',
+    'cal.prevMonth': 'Previous month',
+    'cal.nextMonth': 'Next month',
+    'chat.you': 'You: ',
+    'chat.driver': 'Driver: ',
     'history.empty': 'No bookings yet.',
     'history.washer': 'Washer',
     'history.cancel': 'Cancel',
@@ -177,8 +184,15 @@ const DICT = {
     'slots.title': 'Giờ còn trống',
     'slots.empty1': 'Ngày này không còn giờ trống.',
     'slots.empty2': 'Hãy thử ngày khác nhé.',
+    'slots.loading': 'Đang tải giờ trống…',
+    'slots.error': 'Không tải được giờ trống.',
+    'slots.retry': 'Thử lại',
     'slots.select': 'Chọn',
     'slots.selected': 'Đã chọn',
+    'cal.prevMonth': 'Tháng trước',
+    'cal.nextMonth': 'Tháng sau',
+    'chat.you': 'Bạn: ',
+    'chat.driver': 'Tài xế: ',
     'history.empty': 'Bạn chưa có lịch đặt nào.',
     'history.washer': 'Thợ rửa xe',
     'history.cancel': 'Hủy',
@@ -273,6 +287,7 @@ interface Templates {
   couponApplied: (p: { percent: number }) => string;
   bookingSuccess: (p: { date: string; time: string; driver: string }) => string;
   duration: (p: { minutes: number }) => string;
+  starsOutOf5: (p: { n: number }) => string;
 }
 
 type TemplateKey = keyof Templates;
@@ -285,6 +300,7 @@ const TEMPLATES: Record<Lang, Templates> = {
     bookingSuccess: ({ date, time, driver }) =>
       `Booked ${date} at ${time} — waiting for ${driver} to confirm.`,
     duration: ({ minutes }) => `${minutes}m`,
+    starsOutOf5: ({ n }) => `${n} out of 5 stars`,
   },
   vi: {
     percentOff: ({ percent }) => `Giảm ${percent}%`,
@@ -293,6 +309,7 @@ const TEMPLATES: Record<Lang, Templates> = {
     bookingSuccess: ({ date, time, driver }) =>
       `Đã đặt lịch ${date} lúc ${time} — đang chờ ${driver} xác nhận.`,
     duration: ({ minutes }) => `${minutes} phút`,
+    starsOutOf5: ({ n }) => `${n} trên 5 sao`,
   },
 };
 

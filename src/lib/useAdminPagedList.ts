@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Exported so callers can request PAGE_LIMIT + 1 rows from the backend (the
 // limit+1 keyset-pagination convention used across every admin list endpoint).
@@ -17,13 +17,21 @@ export function useAdminPagedList<T>(
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
 
+  // Generation counter: reload bumps it, and any response (first page or
+  // loadMore append) from an older generation is dropped — a slow request for
+  // the previous filter can't overwrite the current filter's rows.
+  const gen = useRef(0);
+
   const reload = useCallback(async (): Promise<void> => {
+    const g = ++gen.current;
     setError('');
     try {
       const page = await fetchPage('');
+      if (g !== gen.current) return;
       setItems(page.slice(0, PAGE_LIMIT));
       setHasMore(page.length > PAGE_LIMIT);
     } catch (err) {
+      if (g !== gen.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load');
       setItems([]);
       setHasMore(false);
@@ -36,13 +44,16 @@ export function useAdminPagedList<T>(
 
   async function loadMore(): Promise<void> {
     if (items.length === 0) return;
+    const g = gen.current;
     setLoadingMore(true);
     setError('');
     try {
       const page = await fetchPage(cursorOf(items[items.length - 1]));
+      if (g !== gen.current) return;
       setItems((prev) => [...prev, ...page.slice(0, PAGE_LIMIT)]);
       setHasMore(page.length > PAGE_LIMIT);
     } catch (err) {
+      if (g !== gen.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load more');
     } finally {
       setLoadingMore(false);

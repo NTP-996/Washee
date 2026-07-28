@@ -10,12 +10,18 @@ export default function SlotPicker({
   date,
   slots,
   selectedId,
+  loading = false,
+  error = false,
+  onRetry,
   onDateChange,
   onPick,
 }: {
   date: string;
   slots: CalendarSlot[];
   selectedId: string | null;
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   onDateChange: (d: string) => void;
   onPick: (s: CalendarSlot) => void;
 }) {
@@ -32,7 +38,28 @@ export default function SlotPicker({
           <div className="font-semibold tabular-nums">{formatLong(date, lang)}</div>
         </div>
 
-        {open.length === 0 ? (
+        {/* Loading and error come first — the definitive "no open times" empty
+            state must only show after a successful empty response, never while
+            the request is in flight or after it failed. */}
+        {loading ? (
+          <p className="animate-pulse rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-sm text-muted">
+            {t('slots.loading')}
+          </p>
+        ) : error ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-sm text-muted"
+          >
+            <p>{t('slots.error')}</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 rounded-full border border-hairline px-4 py-2 text-sm text-ink transition hover:border-brand-to"
+            >
+              {t('slots.retry')}
+            </button>
+          </div>
+        ) : open.length === 0 ? (
           <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-sm text-muted">
             {t('slots.empty1')}
             <br />

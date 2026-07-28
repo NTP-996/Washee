@@ -47,20 +47,34 @@ function ReviewForm({
       <div className="text-xs uppercase tracking-widest text-muted">{t('review.rate')}</div>
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted">{t('review.wash')}</span>
-        <StarRating value={washRating} onChange={setWashRating} size="sm" />
+        <StarRating
+          value={washRating}
+          onChange={setWashRating}
+          size="sm"
+          label={t('review.wash')}
+        />
       </div>
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted">{t('review.driver')}</span>
-        <StarRating value={driverRating} onChange={setDriverRating} size="sm" />
+        <StarRating
+          value={driverRating}
+          onChange={setDriverRating}
+          size="sm"
+          label={t('review.driver')}
+        />
       </div>
       <textarea
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         placeholder={t('review.commentPlaceholder')}
         rows={2}
-        className="w-full rounded-xl border border-hairline bg-panel px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-to"
+        className="w-full rounded-xl border border-hairline bg-panel px-3 py-2 text-sm text-ink transition focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
       />
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
       <Button
         onClick={submit}
         disabled={busy || washRating === 0 || driverRating === 0}
@@ -73,16 +87,24 @@ function ReviewForm({
 }
 
 function ReviewDisplay({ review }: { review: ReviewSummary }) {
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   return (
     <div className="mt-3 space-y-1.5 border-t border-hairline pt-3">
       <div className="flex items-center gap-3 text-sm">
         <span className="text-muted">{t('review.wash')}</span>
-        <StarRating value={review.washRating} size="sm" />
+        <StarRating
+          value={review.washRating}
+          size="sm"
+          label={tf('starsOutOf5', { n: review.washRating })}
+        />
       </div>
       <div className="flex items-center gap-3 text-sm">
         <span className="text-muted">{t('review.driver')}</span>
-        <StarRating value={review.driverRating} size="sm" />
+        <StarRating
+          value={review.driverRating}
+          size="sm"
+          label={tf('starsOutOf5', { n: review.driverRating })}
+        />
       </div>
       {review.comment && <p className="text-sm text-muted">&ldquo;{review.comment}&rdquo;</p>}
     </div>
@@ -98,7 +120,7 @@ export default function BookingHistory({
   onCancel: (id: string) => void;
   onReviewed: (bookingId: string, review: ReviewSummary) => void;
 }) {
-  const { lang, t } = useI18n();
+  const { lang, t, tf } = useI18n();
   const [openChat, setOpenChat] = useState<string | null>(null);
   if (bookings.length === 0) return <p className="text-sm text-muted">{t('history.empty')}</p>;
   return (
@@ -118,7 +140,11 @@ export default function BookingHistory({
                     · {t('history.washer')}: {b.driverName}
                     {b.driverRating.count > 0 && (
                       <span className="ml-1.5 inline-flex items-center gap-1 align-middle">
-                        <StarRating value={Math.round(b.driverRating.driverAvg)} size="sm" />
+                        <StarRating
+                          value={Math.round(b.driverRating.driverAvg)}
+                          size="sm"
+                          label={tf('starsOutOf5', { n: Math.round(b.driverRating.driverAvg) })}
+                        />
                         <span>({b.driverRating.count})</span>
                       </span>
                     )}

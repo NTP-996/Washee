@@ -42,7 +42,7 @@ export default function NotifyPanel() {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-hairline bg-panel-2 px-3 py-2 text-sm text-ink outline-none transition placeholder:text-muted focus:border-brand-to';
+    'w-full rounded-xl border border-hairline bg-panel-2 px-3 py-2 text-sm text-ink transition placeholder:text-muted focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to';
 
   return (
     <section className="rounded-2xl border border-hairline bg-panel p-6">

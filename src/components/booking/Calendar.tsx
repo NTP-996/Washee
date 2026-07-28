@@ -15,7 +15,7 @@ export default function Calendar({
   min?: string;
   marked?: Set<string>; // days to flag with an availability dot
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [sy, sm] = selected.split('-').map(Number);
   const [view, setView] = useState<{ y: number; m: number }>({ y: sy, m: sm - 1 });
 
@@ -32,7 +32,7 @@ export default function Calendar({
     });
 
   const navBtn =
-    'grid h-8 w-8 place-items-center rounded-lg border border-hairline text-muted transition hover:border-brand-to hover:text-ink disabled:opacity-30 disabled:hover:border-hairline disabled:hover:text-muted';
+    'grid h-11 w-11 place-items-center rounded-lg border border-hairline text-muted transition hover:border-brand-to hover:text-ink disabled:opacity-30 disabled:hover:border-hairline disabled:hover:text-muted';
 
   return (
     <div>
@@ -41,7 +41,7 @@ export default function Calendar({
           type="button"
           onClick={() => shift(-1)}
           disabled={!canPrev}
-          aria-label="Previous month"
+          aria-label={t('cal.prevMonth')}
           className={navBtn}
         >
           ‹
@@ -49,7 +49,12 @@ export default function Calendar({
         <div className="text-sm font-semibold tracking-tight tabular-nums">
           {formatMonth(view.y, view.m, lang)}
         </div>
-        <button type="button" onClick={() => shift(1)} aria-label="Next month" className={navBtn}>
+        <button
+          type="button"
+          onClick={() => shift(1)}
+          aria-label={t('cal.nextMonth')}
+          className={navBtn}
+        >
           ›
         </button>
       </div>

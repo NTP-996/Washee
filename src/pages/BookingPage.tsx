@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiRequestError } from '../lib/api';
 import { formatVnd } from '../lib/format';
@@ -30,6 +30,13 @@ import { useElapsed } from '../lib/useElapsed';
 // `active()` guard exactly.
 const ACTIVE_STATUSES = new Set(['pending', 'confirmed', 'in_progress', 'awaiting_payment']);
 
+// Leaf timer (same idiom as the driver sheet's JobTimer) so the 1 Hz elapsed
+// tick re-renders only this line, not the whole page.
+function InProgressTimer({ startedAt }: { startedAt: string }) {
+  const elapsed = useElapsed(startedAt);
+  return <p className="mt-1.5 font-semibold tabular-nums text-brand-from">{elapsed}</p>;
+}
+
 export default function BookingPage() {
   const { lang, t, tf } = useI18n();
   const { user } = useAuth();
@@ -39,6 +46,8 @@ export default function BookingPage() {
   const [packageId, setPackageId] = useState('');
   const [date, setDate] = useState(todayISO());
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState(false);
   const [locations, setLocations] = useState<CarLocation[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [locationId, setLocationId] = useState('');
@@ -51,15 +60,33 @@ export default function BookingPage() {
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Request sequence shared by every loadSlots caller (date/package effect,
+  // confirm, cancel) — only the newest response may commit, so an older slower
+  // request can't render another date/package's slots.
+  const slotsReq = useRef(0);
+
   async function loadSlots(d: string, pkgId: string): Promise<void> {
+    const seq = ++slotsReq.current;
     if (!pkgId) {
       setSlots([]);
       return;
     }
+    setSlotsLoading(true);
+    setSlotsError(false);
     try {
-      setSlots(await api<CalendarSlot[]>(`/api/bookings/slots?date=${d}&packageId=${pkgId}`));
+      const data = await api<CalendarSlot[]>(`/api/bookings/slots?date=${d}&packageId=${pkgId}`);
+      if (seq === slotsReq.current) {
+        setSlots(data);
+        setSlotsLoading(false);
+      }
     } catch {
-      setSlots([]);
+      // A failed fetch must not masquerade as "no availability" — surface an
+      // error state with a retry instead of an empty slot list.
+      if (seq === slotsReq.current) {
+        setSlots([]);
+        setSlotsError(true);
+        setSlotsLoading(false);
+      }
     }
   }
   async function loadBookings(): Promise<void> {
@@ -190,9 +217,6 @@ export default function BookingPage() {
   // underneath already shows the resolved state. Same single-most-recent
   // scope as before — not multi-booking live tracking.
   const activeBooking = bookings.find((b) => ACTIVE_STATUSES.has(b.status)) ?? null;
-  const elapsed = useElapsed(
-    activeBooking?.status === 'in_progress' ? activeBooking.startedAt : null,
-  );
 
   useBookingLive(
     activeBooking?.id ?? null,
@@ -237,31 +261,39 @@ export default function BookingPage() {
         {activeBooking && (
           <section className="relative mb-6 rounded-2xl border border-brand-to/40 bg-panel-2 p-5 sm:p-6">
             <CornerBrackets />
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-to opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-to" />
-              </span>
-              <h2 className="text-xs font-semibold uppercase tracking-widest">
-                {activeBooking.status === 'pending' && t('booking.waitingTitle')}
-                {activeBooking.status === 'confirmed' && t('booking.confirmedTitle')}
-                {activeBooking.status === 'in_progress' && t('booking.inProgressTitle')}
-                {activeBooking.status === 'awaiting_payment' && t('booking.awaitingPaymentTitle')}
-              </h2>
+            {/* Live region: the status heading + hint announce each WebSocket
+                transition (confirmed / started / done) to screen readers. The
+                ping dot is aria-hidden and the 1 Hz InProgressTimer stays
+                outside so the ticking clock doesn't spam announcements. The
+                hints are mutually exclusive per status, so grouping them here
+                never changes the rendered DOM for any given state. */}
+            <div aria-live="polite" role="status">
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-to opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-to" />
+                </span>
+                <h2 className="text-xs font-semibold uppercase tracking-widest">
+                  {activeBooking.status === 'pending' && t('booking.waitingTitle')}
+                  {activeBooking.status === 'confirmed' && t('booking.confirmedTitle')}
+                  {activeBooking.status === 'in_progress' && t('booking.inProgressTitle')}
+                  {activeBooking.status === 'awaiting_payment' && t('booking.awaitingPaymentTitle')}
+                </h2>
+              </div>
+              {activeBooking.status === 'pending' && (
+                <p className="mt-1.5 text-sm text-muted">{t('booking.waitingHint')}</p>
+              )}
+              {activeBooking.status === 'confirmed' && (
+                <p className="mt-1.5 text-sm text-muted">{t('booking.confirmedHint')}</p>
+              )}
+              {activeBooking.status === 'awaiting_payment' && (
+                <p className="mt-1.5 text-sm text-muted">
+                  {t('booking.awaitingPaymentHint')} {formatVnd(activeBooking.price)}
+                </p>
+              )}
             </div>
-            {activeBooking.status === 'pending' && (
-              <p className="mt-1.5 text-sm text-muted">{t('booking.waitingHint')}</p>
-            )}
-            {activeBooking.status === 'confirmed' && (
-              <p className="mt-1.5 text-sm text-muted">{t('booking.confirmedHint')}</p>
-            )}
-            {activeBooking.status === 'in_progress' && elapsed && (
-              <p className="mt-1.5 font-semibold tabular-nums text-brand-from">{elapsed}</p>
-            )}
-            {activeBooking.status === 'awaiting_payment' && (
-              <p className="mt-1.5 text-sm text-muted">
-                {t('booking.awaitingPaymentHint')} {formatVnd(activeBooking.price)}
-              </p>
+            {activeBooking.status === 'in_progress' && activeBooking.startedAt && (
+              <InProgressTimer startedAt={activeBooking.startedAt} />
             )}
             <div className="mt-3 font-semibold tabular-nums">
               {formatLong(activeBooking.date, lang)} · {activeBooking.startTime}
@@ -330,6 +362,9 @@ export default function BookingPage() {
               date={date}
               slots={slots}
               selectedId={selectedSlot?.id ?? null}
+              loading={slotsLoading}
+              error={slotsError}
+              onRetry={() => void loadSlots(date, packageId)}
               onDateChange={setDate}
               onPick={setSelectedSlot}
             />
@@ -359,7 +394,7 @@ export default function BookingPage() {
               <select
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
-                className="w-full rounded-xl border border-hairline bg-panel px-4 py-3 text-ink outline-none transition focus:border-brand-to"
+                className="w-full rounded-xl border border-hairline bg-panel px-4 py-3 text-ink transition focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
               >
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -413,8 +448,18 @@ export default function BookingPage() {
           </section>
         )}
 
-        {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-        {success && <p className="mt-4 text-sm text-brand-from">{success}</p>}
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-red-400">
+            {error}
+          </p>
+        )}
+        {/* Success lives in a persistently mounted polite region — a freshly
+            mounted role="status" node is announced inconsistently across
+            screen readers, but a text change inside an existing region is
+            reliable. The empty wrapper renders zero height. */}
+        <div aria-live="polite" role="status">
+          {success && <p className="mt-4 text-sm text-brand-from">{success}</p>}
+        </div>
 
         <h2 className="mb-3 mt-10 text-xs uppercase tracking-widest text-muted">
           {t('booking.yourBookings')}

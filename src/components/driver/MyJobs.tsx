@@ -129,12 +129,16 @@ export default function MyJobs() {
         <h2 className="text-xs uppercase tracking-widest text-muted">Job sheet</h2>
         <button
           onClick={() => void load()}
-          className="rounded-full border border-hairline px-3 py-1 text-xs text-muted transition hover:border-brand-to hover:text-ink"
+          className="min-h-11 rounded-full border border-hairline px-4 py-2 text-xs text-muted transition hover:border-brand-to hover:text-ink"
         >
           Refresh
         </button>
       </div>
-      {actionError && <p className="mb-3 text-sm text-red-400">{actionError}</p>}
+      {actionError && (
+        <p role="alert" className="mb-3 text-sm text-red-400">
+          {actionError}
+        </p>
+      )}
 
       {jobs.length === 0 ? (
         <p className="text-sm text-muted">
@@ -183,18 +187,18 @@ export default function MyJobs() {
               )}
 
               {j.status === 'pending' && (
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-hairline pt-3">
+                <div className="mt-3 flex flex-wrap gap-3 border-t border-hairline pt-3">
                   <button
                     onClick={() => void confirm(j.id)}
                     disabled={busyId === j.id}
-                    className="rounded-full border border-brand-to/40 px-4 py-1.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
+                    className="min-h-11 rounded-full border border-brand-to/40 px-5 py-2.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
                   >
                     Confirm
                   </button>
                   <button
                     onClick={() => openDecline(j.id)}
                     disabled={busyId === j.id}
-                    className="rounded-full border border-hairline px-4 py-1.5 text-sm text-muted transition hover:border-red-400/60 hover:text-red-400 disabled:opacity-50"
+                    className="min-h-11 rounded-full border border-hairline px-5 py-2.5 text-sm text-muted transition hover:border-red-400/60 hover:text-red-400 disabled:opacity-50"
                   >
                     Decline
                   </button>
@@ -205,7 +209,7 @@ export default function MyJobs() {
                   <button
                     onClick={() => void startJob(j.id)}
                     disabled={busyId === j.id}
-                    className="rounded-full border border-brand-to/40 px-4 py-1.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
+                    className="min-h-11 rounded-full border border-brand-to/40 px-5 py-2.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
                   >
                     Start Job
                   </button>
@@ -216,7 +220,7 @@ export default function MyJobs() {
                   <button
                     onClick={() => void finishJob(j.id)}
                     disabled={busyId === j.id}
-                    className="rounded-full border border-brand-to/40 px-4 py-1.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
+                    className="min-h-11 rounded-full border border-brand-to/40 px-5 py-2.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
                   >
                     Job Done
                   </button>
@@ -227,7 +231,7 @@ export default function MyJobs() {
                   <button
                     onClick={() => void confirmPayment(j.id)}
                     disabled={busyId === j.id}
-                    className="rounded-full border border-brand-to/40 px-4 py-1.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
+                    className="min-h-11 rounded-full border border-brand-to/40 px-5 py-2.5 text-sm text-brand-from transition hover:brightness-110 disabled:opacity-50"
                   >
                     Confirm {formatVnd(j.price)} Received
                   </button>
@@ -244,7 +248,8 @@ export default function MyJobs() {
                         key={reason}
                         type="button"
                         onClick={() => setDeclineReason(reason)}
-                        className={`rounded-full border px-3 py-1 text-xs transition ${
+                        aria-pressed={declineReason === reason}
+                        className={`min-h-11 rounded-full border px-4 py-2 text-xs transition ${
                           declineReason === reason
                             ? 'border-brand-to/60 text-brand-from'
                             : 'border-hairline text-muted hover:border-brand-to'
@@ -260,7 +265,7 @@ export default function MyJobs() {
                       onChange={(e) => setDeclineOther(e.target.value)}
                       placeholder="Tell the customer why…"
                       rows={2}
-                      className="w-full rounded-xl border border-hairline bg-panel px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-to"
+                      className="w-full rounded-xl border border-hairline bg-panel px-3 py-2 text-sm text-ink transition focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
                     />
                   )}
                   <button
@@ -270,7 +275,7 @@ export default function MyJobs() {
                       !declineReason ||
                       (declineReason === 'Other' && !declineOther.trim())
                     }
-                    className="rounded-full border border-red-400/60 px-4 py-1.5 text-sm text-red-400 transition hover:brightness-110 disabled:opacity-50"
+                    className="min-h-11 rounded-full border border-red-400/60 px-5 py-2.5 text-sm text-red-400 transition hover:brightness-110 disabled:opacity-50"
                   >
                     Send decline
                   </button>
@@ -279,7 +284,8 @@ export default function MyJobs() {
 
               <button
                 onClick={() => setOpenChat((prev) => (prev === j.id ? null : j.id))}
-                className="mt-2 text-xs text-muted underline-offset-2 hover:text-brand-from hover:underline"
+                aria-expanded={openChat === j.id}
+                className="mt-1 block min-h-11 py-2.5 text-xs text-muted underline-offset-2 hover:text-brand-from hover:underline"
               >
                 Messages
               </button>

@@ -52,7 +52,11 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-red-400">
+            {error}
+          </p>
+        )}
         <Button type="submit" disabled={busy} className="w-full">
           {busy ? '…' : t('auth.login.submit')}
         </Button>

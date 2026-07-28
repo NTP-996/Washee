@@ -90,7 +90,7 @@ export default function AvailabilityEditor() {
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 required
-                className="w-full rounded-lg border border-hairline bg-panel-2 px-2 py-2 text-sm tabular-nums text-ink outline-none focus:border-brand-to"
+                className="w-full rounded-lg border border-hairline bg-panel-2 px-2 py-2 text-sm tabular-nums text-ink focus:border-brand-to focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-to"
               />
             </label>
             <button
