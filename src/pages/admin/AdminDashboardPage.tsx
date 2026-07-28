@@ -10,6 +10,7 @@ import CustomersPanel from '../../components/admin/CustomersPanel';
 import PackagesPanel from '../../components/admin/PackagesPanel';
 import AuditPanel from '../../components/admin/AuditPanel';
 import ReviewsPanel from '../../components/admin/ReviewsPanel';
+import NotifyPanel from '../../components/admin/NotifyPanel';
 
 const sections = [
   { id: 'schedule', label: 'Schedule' },
@@ -17,6 +18,7 @@ const sections = [
   { id: 'drivers', label: 'Drivers' },
   { id: 'packages', label: 'Packages' },
   { id: 'customers', label: 'Customers' },
+  { id: 'notify', label: 'Notify' },
   { id: 'reviews', label: 'Reviews' },
   { id: 'audit', label: 'Audit' },
 ];
@@ -85,6 +87,10 @@ export default function AdminDashboardPage() {
 
         <section id="customers" className="scroll-mt-20">
           <CustomersPanel />
+        </section>
+
+        <section id="notify" className="scroll-mt-20">
+          <NotifyPanel />
         </section>
 
         <section id="reviews" className="scroll-mt-20">

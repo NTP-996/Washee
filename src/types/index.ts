@@ -245,6 +245,13 @@ export interface CompleteBookingResult {
   couponIssued: boolean;
 }
 
+// POST /api/admin/notifications receipt — devices targeted, provider accepts/rejects.
+export interface AdminNotifyResult {
+  devices: number;
+  sent: number;
+  failed: number;
+}
+
 // Standard error envelope: { error: { code, message, details? } }.
 export interface ApiError {
   error: { code: string; message: string; details?: unknown };
